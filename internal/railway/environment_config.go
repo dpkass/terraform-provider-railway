@@ -12,14 +12,20 @@ type BucketConfig struct {
 }
 
 type ServiceConfig struct {
-	Deploy    *ServiceDeployConfig       `json:"deploy,omitempty"`
-	Source    *ServiceSourceConfig       `json:"source,omitempty"`
-	Variables map[string]*VariableConfig `json:"variables,omitempty"`
+	ConfigFile *string                    `json:"configFile"`
+	Deploy     *ServiceDeployConfig       `json:"deploy,omitempty"`
+	Source     *ServiceSourceConfig       `json:"source,omitempty"`
+	Variables  map[string]*VariableConfig `json:"variables,omitempty"`
 }
 
 type ServiceDeployConfig struct {
-	LimitOverride     *ServiceLimitOverrideConfig    `json:"limitOverride,omitempty"`
-	MultiRegionConfig map[string]ServiceRegionConfig `json:"multiRegionConfig,omitempty"`
+	CronSchedule        *string                           `json:"cronSchedule"`
+	HealthcheckPath     *string                           `json:"healthcheckPath"`
+	HealthcheckTimeout  *int64                            `json:"healthcheckTimeout"`
+	LimitOverride       *ServiceLimitOverrideConfig       `json:"limitOverride,omitempty"`
+	MultiRegionConfig   map[string]*ServiceRegionConfig   `json:"multiRegionConfig"`
+	RegistryCredentials *ServiceRegistryCredentialsConfig `json:"registryCredentials"`
+	StartCommand        *string                           `json:"startCommand"`
 }
 
 type ServiceLimitOverrideConfig struct {
@@ -36,9 +42,15 @@ type ServiceRegionConfig struct {
 }
 
 type ServiceSourceConfig struct {
-	Branch *string `json:"branch"`
-	Image  *string `json:"image"`
-	Repo   *string `json:"repo"`
+	Branch        *string `json:"branch"`
+	Image         *string `json:"image"`
+	Repo          *string `json:"repo"`
+	RootDirectory *string `json:"rootDirectory"`
+}
+
+type ServiceRegistryCredentialsConfig struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type VariableConfig struct {
