@@ -15,10 +15,13 @@ func TestAccBucketResourceDefault(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccBucketResourceConfig("terraform-provider-bucket-test", "ams"),
+				Config: testAccBucketResourceConfig("terraform-provider-bucket-test", "ams", "https://example.com", 3600),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("railway_bucket.test", "name", "terraform-provider-bucket-test"),
 					resource.TestCheckResourceAttr("railway_bucket.test", "region", "ams"),
+					resource.TestCheckResourceAttr("railway_bucket_cors_configuration.test", "cors_rules.#", "1"),
+					resource.TestCheckTypeSetElemAttr("railway_bucket_cors_configuration.test", "cors_rules.0.allowed_origins.*", "https://example.com"),
+					resource.TestCheckResourceAttr("railway_bucket_cors_configuration.test", "cors_rules.0.max_age_seconds", "3600"),
 				),
 			},
 			{
@@ -28,13 +31,27 @@ func TestAccBucketResourceDefault(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccBucketResourceConfig("terraform-provider-bucket-renamed", "ams"),
+				ResourceName:      "railway_bucket_cors_configuration.test",
+				ImportState:       true,
+				ImportStateIdFunc: bucketCorsConfigurationImportIDFunc,
+				ImportStateVerify: true,
+			},
+			{
+				Config: testAccBucketResourceConfig("terraform-provider-bucket-renamed", "ams", "https://updated.example.com", 1800),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("railway_bucket.test", "name", "terraform-provider-bucket-renamed"),
+					resource.TestCheckTypeSetElemAttr("railway_bucket_cors_configuration.test", "cors_rules.0.allowed_origins.*", "https://updated.example.com"),
+					resource.TestCheckResourceAttr("railway_bucket_cors_configuration.test", "cors_rules.0.max_age_seconds", "1800"),
+				),
+			},
+			{
+				Config: testAccBucketResourceConfig("terraform-provider-bucket-renamed", "ams", "", 0),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("railway_bucket.test", "name", "terraform-provider-bucket-renamed"),
 				),
 			},
 			{
-				Config: testAccBucketResourceConfig("terraform-provider-bucket-renamed", "iad"),
+				Config: testAccBucketResourceConfig("terraform-provider-bucket-renamed", "iad", "", 0),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction("railway_bucket.test", plancheck.ResourceActionReplace),
@@ -46,15 +63,43 @@ func TestAccBucketResourceDefault(t *testing.T) {
 	})
 }
 
-func testAccBucketResourceConfig(name string, region string) string {
+func testAccBucketResourceConfig(name string, region string, corsOrigin string, maxAgeSeconds int) string {
+	corsConfiguration := ""
+	if corsOrigin != "" {
+		corsConfiguration = fmt.Sprintf(`
+resource "railway_bucket_cors_configuration" "test" {
+  project_id     = railway_project.test.id
+  environment_id = railway_project.test.default_environment.id
+  bucket_id      = railway_bucket.test.id
+
+  cors_rules = [{
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD", "PUT"]
+    allowed_origins = ["%s"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = %d
+  }]
+}
+`, corsOrigin, maxAgeSeconds)
+	}
+
 	return fmt.Sprintf(`
+resource "railway_project" "test" {
+  name = "tf-bucket-acceptance"
+
+  default_environment = {
+    name = "test"
+  }
+}
+
 resource "railway_bucket" "test" {
   name           = "%s"
-  project_id     = "0bb01547-570d-4109-a5e8-138691f6a2d1"
-  environment_id = "d0519b29-5d12-4857-a5dd-76fa7418336c"
+  project_id     = railway_project.test.id
+  environment_id = railway_project.test.default_environment.id
   region         = "%s"
 }
-`, name, region)
+%s
+`, name, region, corsConfiguration)
 }
 
 func bucketImportIDFunc(state *terraform.State) (string, error) {
@@ -68,5 +113,19 @@ func bucketImportIDFunc(state *terraform.State) (string, error) {
 		rawState.Primary.Attributes["project_id"],
 		rawState.Primary.Attributes["environment_id"],
 		rawState.Primary.Attributes["id"],
+	), nil
+}
+
+func bucketCorsConfigurationImportIDFunc(state *terraform.State) (string, error) {
+	rawState, ok := state.RootModule().Resources["railway_bucket_cors_configuration.test"]
+	if !ok {
+		return "", fmt.Errorf("resource not found")
+	}
+
+	return fmt.Sprintf(
+		"%s:%s:%s",
+		rawState.Primary.Attributes["project_id"],
+		rawState.Primary.Attributes["environment_id"],
+		rawState.Primary.Attributes["bucket_id"],
 	), nil
 }
