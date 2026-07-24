@@ -8,7 +8,35 @@ import (
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
+	"github.com/terraform-community-providers/terraform-provider-railway/internal/railway"
 )
+
+type BucketCreateInput struct {
+	// [unimplemented] The environment to deploy the bucket instances into. If
+	// `null`, the bucket will not be deployed to any environment. `undefined` will
+	// deploy to all environments.
+	EnvironmentId *string `json:"environmentId,omitempty"`
+	// The name of the bucket
+	Name string `json:"name"`
+	// The project to create the bucket in
+	ProjectId string `json:"projectId"`
+}
+
+// GetEnvironmentId returns BucketCreateInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *BucketCreateInput) GetEnvironmentId() *string { return v.EnvironmentId }
+
+// GetName returns BucketCreateInput.Name, and is useful for accessing the field via an interface.
+func (v *BucketCreateInput) GetName() string { return v.Name }
+
+// GetProjectId returns BucketCreateInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *BucketCreateInput) GetProjectId() string { return v.ProjectId }
+
+type BucketUpdateInput struct {
+	Name string `json:"name"`
+}
+
+// GetName returns BucketUpdateInput.Name, and is useful for accessing the field via an interface.
+func (v *BucketUpdateInput) GetName() string { return v.Name }
 
 type Builder string
 
@@ -158,6 +186,30 @@ func (v *EnvironmentCreateInput) GetSourceEnvironmentId() *string { return v.Sou
 
 // GetStageInitialChanges returns EnvironmentCreateInput.StageInitialChanges, and is useful for accessing the field via an interface.
 func (v *EnvironmentCreateInput) GetStageInitialChanges() bool { return v.StageInitialChanges }
+
+type EnvironmentPatchStatus string
+
+const (
+	EnvironmentPatchStatusApplying  EnvironmentPatchStatus = "APPLYING"
+	EnvironmentPatchStatusCommitted EnvironmentPatchStatus = "COMMITTED"
+	EnvironmentPatchStatusStaged    EnvironmentPatchStatus = "STAGED"
+)
+
+// ManagedBucket includes the GraphQL fields of Bucket requested by the fragment ManagedBucket.
+type ManagedBucket struct {
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	ProjectId string `json:"projectId"`
+}
+
+// GetId returns ManagedBucket.Id, and is useful for accessing the field via an interface.
+func (v *ManagedBucket) GetId() string { return v.Id }
+
+// GetName returns ManagedBucket.Name, and is useful for accessing the field via an interface.
+func (v *ManagedBucket) GetName() string { return v.Name }
+
+// GetProjectId returns ManagedBucket.ProjectId, and is useful for accessing the field via an interface.
+func (v *ManagedBucket) GetProjectId() string { return v.ProjectId }
 
 // Project includes the GraphQL fields of Project requested by the fragment Project.
 type Project struct {
@@ -504,15 +556,15 @@ type ServiceInstanceUpdateInput struct {
 	BuildCommand            *string                   `json:"buildCommand,omitempty"`
 	Builder                 *Builder                  `json:"builder,omitempty"`
 	CronSchedule            *string                   `json:"cronSchedule"`
-	DockerfilePath          string                    `json:"dockerfilePath"`
-	DrainingSeconds         int                       `json:"drainingSeconds"`
+	DockerfilePath          *string                   `json:"dockerfilePath,omitempty"`
+	DrainingSeconds         *int                      `json:"drainingSeconds,omitempty"`
 	HealthcheckPath         *string                   `json:"healthcheckPath,omitempty"`
 	HealthcheckTimeout      *int                      `json:"healthcheckTimeout,omitempty"`
-	Ipv6EgressEnabled       bool                      `json:"ipv6EgressEnabled"`
+	Ipv6EgressEnabled       *bool                     `json:"ipv6EgressEnabled,omitempty"`
 	MultiRegionConfig       *map[string]interface{}   `json:"multiRegionConfig,omitempty"`
 	NixpacksPlan            *map[string]interface{}   `json:"nixpacksPlan,omitempty"`
 	NumReplicas             *int                      `json:"numReplicas,omitempty"`
-	OverlapSeconds          int                       `json:"overlapSeconds"`
+	OverlapSeconds          *int                      `json:"overlapSeconds,omitempty"`
 	PreDeployCommand        *[]string                 `json:"preDeployCommand,omitempty"`
 	RailwayConfigFile       *string                   `json:"railwayConfigFile,omitempty"`
 	Region                  *string                   `json:"region,omitempty"`
@@ -536,10 +588,10 @@ func (v *ServiceInstanceUpdateInput) GetBuilder() *Builder { return v.Builder }
 func (v *ServiceInstanceUpdateInput) GetCronSchedule() *string { return v.CronSchedule }
 
 // GetDockerfilePath returns ServiceInstanceUpdateInput.DockerfilePath, and is useful for accessing the field via an interface.
-func (v *ServiceInstanceUpdateInput) GetDockerfilePath() string { return v.DockerfilePath }
+func (v *ServiceInstanceUpdateInput) GetDockerfilePath() *string { return v.DockerfilePath }
 
 // GetDrainingSeconds returns ServiceInstanceUpdateInput.DrainingSeconds, and is useful for accessing the field via an interface.
-func (v *ServiceInstanceUpdateInput) GetDrainingSeconds() int { return v.DrainingSeconds }
+func (v *ServiceInstanceUpdateInput) GetDrainingSeconds() *int { return v.DrainingSeconds }
 
 // GetHealthcheckPath returns ServiceInstanceUpdateInput.HealthcheckPath, and is useful for accessing the field via an interface.
 func (v *ServiceInstanceUpdateInput) GetHealthcheckPath() *string { return v.HealthcheckPath }
@@ -548,7 +600,7 @@ func (v *ServiceInstanceUpdateInput) GetHealthcheckPath() *string { return v.Hea
 func (v *ServiceInstanceUpdateInput) GetHealthcheckTimeout() *int { return v.HealthcheckTimeout }
 
 // GetIpv6EgressEnabled returns ServiceInstanceUpdateInput.Ipv6EgressEnabled, and is useful for accessing the field via an interface.
-func (v *ServiceInstanceUpdateInput) GetIpv6EgressEnabled() bool { return v.Ipv6EgressEnabled }
+func (v *ServiceInstanceUpdateInput) GetIpv6EgressEnabled() *bool { return v.Ipv6EgressEnabled }
 
 // GetMultiRegionConfig returns ServiceInstanceUpdateInput.MultiRegionConfig, and is useful for accessing the field via an interface.
 func (v *ServiceInstanceUpdateInput) GetMultiRegionConfig() *map[string]interface{} {
@@ -562,7 +614,7 @@ func (v *ServiceInstanceUpdateInput) GetNixpacksPlan() *map[string]interface{} {
 func (v *ServiceInstanceUpdateInput) GetNumReplicas() *int { return v.NumReplicas }
 
 // GetOverlapSeconds returns ServiceInstanceUpdateInput.OverlapSeconds, and is useful for accessing the field via an interface.
-func (v *ServiceInstanceUpdateInput) GetOverlapSeconds() int { return v.OverlapSeconds }
+func (v *ServiceInstanceUpdateInput) GetOverlapSeconds() *int { return v.OverlapSeconds }
 
 // GetPreDeployCommand returns ServiceInstanceUpdateInput.PreDeployCommand, and is useful for accessing the field via an interface.
 func (v *ServiceInstanceUpdateInput) GetPreDeployCommand() *[]string { return v.PreDeployCommand }
@@ -884,6 +936,22 @@ func (v *VolumeVolumeInstancesVolumeVolumeInstancesConnectionEdgesVolumeVolumeIn
 	return v.SizeMB
 }
 
+// __commitEnvironmentPatchInput is used internally by genqlient
+type __commitEnvironmentPatchInput struct {
+	EnvironmentId string                    `json:"environmentId"`
+	Patch         railway.EnvironmentConfig `json:"patch"`
+	CommitMessage string                    `json:"commitMessage"`
+}
+
+// GetEnvironmentId returns __commitEnvironmentPatchInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__commitEnvironmentPatchInput) GetEnvironmentId() string { return v.EnvironmentId }
+
+// GetPatch returns __commitEnvironmentPatchInput.Patch, and is useful for accessing the field via an interface.
+func (v *__commitEnvironmentPatchInput) GetPatch() railway.EnvironmentConfig { return v.Patch }
+
+// GetCommitMessage returns __commitEnvironmentPatchInput.CommitMessage, and is useful for accessing the field via an interface.
+func (v *__commitEnvironmentPatchInput) GetCommitMessage() string { return v.CommitMessage }
+
 // __connectServiceInput is used internally by genqlient
 type __connectServiceInput struct {
 	Id    string              `json:"id"`
@@ -911,6 +979,14 @@ type __createEnvironmentInput struct {
 
 // GetInput returns __createEnvironmentInput.Input, and is useful for accessing the field via an interface.
 func (v *__createEnvironmentInput) GetInput() EnvironmentCreateInput { return v.Input }
+
+// __createManagedBucketInput is used internally by genqlient
+type __createManagedBucketInput struct {
+	Input BucketCreateInput `json:"input"`
+}
+
+// GetInput returns __createManagedBucketInput.Input, and is useful for accessing the field via an interface.
+func (v *__createManagedBucketInput) GetInput() BucketCreateInput { return v.Input }
 
 // __createProjectInput is used internally by genqlient
 type __createProjectInput struct {
@@ -1024,6 +1100,30 @@ type __disconnectServiceInput struct {
 // GetId returns __disconnectServiceInput.Id, and is useful for accessing the field via an interface.
 func (v *__disconnectServiceInput) GetId() string { return v.Id }
 
+// __getBucketS3CredentialsInput is used internally by genqlient
+type __getBucketS3CredentialsInput struct {
+	ProjectId     string `json:"projectId"`
+	EnvironmentId string `json:"environmentId"`
+	BucketId      string `json:"bucketId"`
+}
+
+// GetProjectId returns __getBucketS3CredentialsInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__getBucketS3CredentialsInput) GetProjectId() string { return v.ProjectId }
+
+// GetEnvironmentId returns __getBucketS3CredentialsInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__getBucketS3CredentialsInput) GetEnvironmentId() string { return v.EnvironmentId }
+
+// GetBucketId returns __getBucketS3CredentialsInput.BucketId, and is useful for accessing the field via an interface.
+func (v *__getBucketS3CredentialsInput) GetBucketId() string { return v.BucketId }
+
+// __getEnvironmentConfigInput is used internally by genqlient
+type __getEnvironmentConfigInput struct {
+	EnvironmentId string `json:"environmentId"`
+}
+
+// GetEnvironmentId returns __getEnvironmentConfigInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentConfigInput) GetEnvironmentId() string { return v.EnvironmentId }
+
 // __getEnvironmentInput is used internally by genqlient
 type __getEnvironmentInput struct {
 	Id string `json:"id"`
@@ -1032,6 +1132,50 @@ type __getEnvironmentInput struct {
 // GetId returns __getEnvironmentInput.Id, and is useful for accessing the field via an interface.
 func (v *__getEnvironmentInput) GetId() string { return v.Id }
 
+// __getEnvironmentPatchInput is used internally by genqlient
+type __getEnvironmentPatchInput struct {
+	Id string `json:"id"`
+}
+
+// GetId returns __getEnvironmentPatchInput.Id, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentPatchInput) GetId() string { return v.Id }
+
+// __getEnvironmentPatchLifecycleInput is used internally by genqlient
+type __getEnvironmentPatchLifecycleInput struct {
+	EnvironmentId string `json:"environmentId"`
+}
+
+// GetEnvironmentId returns __getEnvironmentPatchLifecycleInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentPatchLifecycleInput) GetEnvironmentId() string { return v.EnvironmentId }
+
+// __getEnvironmentServiceInstancesInput is used internally by genqlient
+type __getEnvironmentServiceInstancesInput struct {
+	ProjectId     string  `json:"projectId"`
+	EnvironmentId string  `json:"environmentId"`
+	After         *string `json:"after"`
+}
+
+// GetProjectId returns __getEnvironmentServiceInstancesInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentServiceInstancesInput) GetProjectId() string { return v.ProjectId }
+
+// GetEnvironmentId returns __getEnvironmentServiceInstancesInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentServiceInstancesInput) GetEnvironmentId() string { return v.EnvironmentId }
+
+// GetAfter returns __getEnvironmentServiceInstancesInput.After, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentServiceInstancesInput) GetAfter() *string { return v.After }
+
+// __getEnvironmentVariablesInput is used internally by genqlient
+type __getEnvironmentVariablesInput struct {
+	EnvironmentId string  `json:"environmentId"`
+	After         *string `json:"after"`
+}
+
+// GetEnvironmentId returns __getEnvironmentVariablesInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentVariablesInput) GetEnvironmentId() string { return v.EnvironmentId }
+
+// GetAfter returns __getEnvironmentVariablesInput.After, and is useful for accessing the field via an interface.
+func (v *__getEnvironmentVariablesInput) GetAfter() *string { return v.After }
+
 // __getEnvironmentsInput is used internally by genqlient
 type __getEnvironmentsInput struct {
 	ProjectId string `json:"projectId"`
@@ -1039,6 +1183,30 @@ type __getEnvironmentsInput struct {
 
 // GetProjectId returns __getEnvironmentsInput.ProjectId, and is useful for accessing the field via an interface.
 func (v *__getEnvironmentsInput) GetProjectId() string { return v.ProjectId }
+
+// __getManagedBucketsInput is used internally by genqlient
+type __getManagedBucketsInput struct {
+	ProjectId string  `json:"projectId"`
+	After     *string `json:"after"`
+}
+
+// GetProjectId returns __getManagedBucketsInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__getManagedBucketsInput) GetProjectId() string { return v.ProjectId }
+
+// GetAfter returns __getManagedBucketsInput.After, and is useful for accessing the field via an interface.
+func (v *__getManagedBucketsInput) GetAfter() *string { return v.After }
+
+// __getManagedServiceInstanceInput is used internally by genqlient
+type __getManagedServiceInstanceInput struct {
+	EnvironmentId string `json:"environmentId"`
+	ServiceId     string `json:"serviceId"`
+}
+
+// GetEnvironmentId returns __getManagedServiceInstanceInput.EnvironmentId, and is useful for accessing the field via an interface.
+func (v *__getManagedServiceInstanceInput) GetEnvironmentId() string { return v.EnvironmentId }
+
+// GetServiceId returns __getManagedServiceInstanceInput.ServiceId, and is useful for accessing the field via an interface.
+func (v *__getManagedServiceInstanceInput) GetServiceId() string { return v.ServiceId }
 
 // __getProjectInput is used internally by genqlient
 type __getProjectInput struct {
@@ -1067,6 +1235,18 @@ func (v *__getServiceInstanceInput) GetEnvironmentId() string { return v.Environ
 
 // GetServiceId returns __getServiceInstanceInput.ServiceId, and is useful for accessing the field via an interface.
 func (v *__getServiceInstanceInput) GetServiceId() string { return v.ServiceId }
+
+// __getServiceInstanceProjectEnvironmentsInput is used internally by genqlient
+type __getServiceInstanceProjectEnvironmentsInput struct {
+	ProjectId string  `json:"projectId"`
+	After     *string `json:"after"`
+}
+
+// GetProjectId returns __getServiceInstanceProjectEnvironmentsInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__getServiceInstanceProjectEnvironmentsInput) GetProjectId() string { return v.ProjectId }
+
+// GetAfter returns __getServiceInstanceProjectEnvironmentsInput.After, and is useful for accessing the field via an interface.
+func (v *__getServiceInstanceProjectEnvironmentsInput) GetAfter() *string { return v.After }
 
 // __getServiceInstancesInput is used internally by genqlient
 type __getServiceInstancesInput struct {
@@ -1200,6 +1380,18 @@ func (v *__updateCustomDomainInput) GetId() string { return v.Id }
 // GetTargetPort returns __updateCustomDomainInput.TargetPort, and is useful for accessing the field via an interface.
 func (v *__updateCustomDomainInput) GetTargetPort() *int { return v.TargetPort }
 
+// __updateManagedBucketInput is used internally by genqlient
+type __updateManagedBucketInput struct {
+	Id    string            `json:"id"`
+	Input BucketUpdateInput `json:"input"`
+}
+
+// GetId returns __updateManagedBucketInput.Id, and is useful for accessing the field via an interface.
+func (v *__updateManagedBucketInput) GetId() string { return v.Id }
+
+// GetInput returns __updateManagedBucketInput.Input, and is useful for accessing the field via an interface.
+func (v *__updateManagedBucketInput) GetInput() BucketUpdateInput { return v.Input }
+
 // __updateProjectInput is used internally by genqlient
 type __updateProjectInput struct {
 	Id    string             `json:"id"`
@@ -1283,6 +1475,17 @@ type __upsertVariableInput struct {
 
 // GetInput returns __upsertVariableInput.Input, and is useful for accessing the field via an interface.
 func (v *__upsertVariableInput) GetInput() VariableUpsertInput { return v.Input }
+
+// commitEnvironmentPatchResponse is returned by commitEnvironmentPatch on success.
+type commitEnvironmentPatchResponse struct {
+	// Commit the provided patch to the environment.
+	EnvironmentPatchCommit string `json:"environmentPatchCommit"`
+}
+
+// GetEnvironmentPatchCommit returns commitEnvironmentPatchResponse.EnvironmentPatchCommit, and is useful for accessing the field via an interface.
+func (v *commitEnvironmentPatchResponse) GetEnvironmentPatchCommit() string {
+	return v.EnvironmentPatchCommit
+}
 
 // connectServiceResponse is returned by connectService on success.
 type connectServiceResponse struct {
@@ -1537,6 +1740,83 @@ type createEnvironmentResponse struct {
 // GetEnvironmentCreate returns createEnvironmentResponse.EnvironmentCreate, and is useful for accessing the field via an interface.
 func (v *createEnvironmentResponse) GetEnvironmentCreate() createEnvironmentEnvironmentCreateEnvironment {
 	return v.EnvironmentCreate
+}
+
+// createManagedBucketBucketCreateBucket includes the requested fields of the GraphQL type Bucket.
+type createManagedBucketBucketCreateBucket struct {
+	ManagedBucket `json:"-"`
+}
+
+// GetId returns createManagedBucketBucketCreateBucket.Id, and is useful for accessing the field via an interface.
+func (v *createManagedBucketBucketCreateBucket) GetId() string { return v.ManagedBucket.Id }
+
+// GetName returns createManagedBucketBucketCreateBucket.Name, and is useful for accessing the field via an interface.
+func (v *createManagedBucketBucketCreateBucket) GetName() string { return v.ManagedBucket.Name }
+
+// GetProjectId returns createManagedBucketBucketCreateBucket.ProjectId, and is useful for accessing the field via an interface.
+func (v *createManagedBucketBucketCreateBucket) GetProjectId() string {
+	return v.ManagedBucket.ProjectId
+}
+
+func (v *createManagedBucketBucketCreateBucket) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*createManagedBucketBucketCreateBucket
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.createManagedBucketBucketCreateBucket = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.ManagedBucket)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalcreateManagedBucketBucketCreateBucket struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
+
+	ProjectId string `json:"projectId"`
+}
+
+func (v *createManagedBucketBucketCreateBucket) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *createManagedBucketBucketCreateBucket) __premarshalJSON() (*__premarshalcreateManagedBucketBucketCreateBucket, error) {
+	var retval __premarshalcreateManagedBucketBucketCreateBucket
+
+	retval.Id = v.ManagedBucket.Id
+	retval.Name = v.ManagedBucket.Name
+	retval.ProjectId = v.ManagedBucket.ProjectId
+	return &retval, nil
+}
+
+// createManagedBucketResponse is returned by createManagedBucket on success.
+type createManagedBucketResponse struct {
+	// Create a bucket in a project
+	BucketCreate createManagedBucketBucketCreateBucket `json:"bucketCreate"`
+}
+
+// GetBucketCreate returns createManagedBucketResponse.BucketCreate, and is useful for accessing the field via an interface.
+func (v *createManagedBucketResponse) GetBucketCreate() createManagedBucketBucketCreateBucket {
+	return v.BucketCreate
 }
 
 // createProjectProjectCreateProject includes the requested fields of the GraphQL type Project.
@@ -2079,6 +2359,76 @@ type disconnectServiceServiceDisconnectService struct {
 // GetId returns disconnectServiceServiceDisconnectService.Id, and is useful for accessing the field via an interface.
 func (v *disconnectServiceServiceDisconnectService) GetId() string { return v.Id }
 
+// getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials includes the requested fields of the GraphQL type BucketS3CompatibleCredentials.
+type getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials struct {
+	AccessKeyId     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Endpoint        string `json:"endpoint"`
+	BucketName      string `json:"bucketName"`
+	Region          string `json:"region"`
+	UrlStyle        string `json:"urlStyle"`
+}
+
+// GetAccessKeyId returns getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials.AccessKeyId, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials) GetAccessKeyId() string {
+	return v.AccessKeyId
+}
+
+// GetSecretAccessKey returns getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials.SecretAccessKey, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials) GetSecretAccessKey() string {
+	return v.SecretAccessKey
+}
+
+// GetEndpoint returns getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials.Endpoint, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials) GetEndpoint() string {
+	return v.Endpoint
+}
+
+// GetBucketName returns getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials.BucketName, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials) GetBucketName() string {
+	return v.BucketName
+}
+
+// GetRegion returns getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials.Region, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials) GetRegion() string {
+	return v.Region
+}
+
+// GetUrlStyle returns getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials.UrlStyle, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials) GetUrlStyle() string {
+	return v.UrlStyle
+}
+
+// getBucketS3CredentialsResponse is returned by getBucketS3Credentials on success.
+type getBucketS3CredentialsResponse struct {
+	// Get the S3-compatible credentials for a bucket
+	BucketS3Credentials []getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials `json:"bucketS3Credentials"`
+}
+
+// GetBucketS3Credentials returns getBucketS3CredentialsResponse.BucketS3Credentials, and is useful for accessing the field via an interface.
+func (v *getBucketS3CredentialsResponse) GetBucketS3Credentials() []getBucketS3CredentialsBucketS3CredentialsBucketS3CompatibleCredentials {
+	return v.BucketS3Credentials
+}
+
+// getEnvironmentConfigEnvironment includes the requested fields of the GraphQL type Environment.
+type getEnvironmentConfigEnvironment struct {
+	Config railway.EnvironmentConfig `json:"config"`
+}
+
+// GetConfig returns getEnvironmentConfigEnvironment.Config, and is useful for accessing the field via an interface.
+func (v *getEnvironmentConfigEnvironment) GetConfig() railway.EnvironmentConfig { return v.Config }
+
+// getEnvironmentConfigResponse is returned by getEnvironmentConfig on success.
+type getEnvironmentConfigResponse struct {
+	// Find a single environment
+	Environment getEnvironmentConfigEnvironment `json:"environment"`
+}
+
+// GetEnvironment returns getEnvironmentConfigResponse.Environment, and is useful for accessing the field via an interface.
+func (v *getEnvironmentConfigResponse) GetEnvironment() getEnvironmentConfigEnvironment {
+	return v.Environment
+}
+
 // getEnvironmentEnvironment includes the requested fields of the GraphQL type Environment.
 type getEnvironmentEnvironment struct {
 	Environment `json:"-"`
@@ -2143,6 +2493,50 @@ func (v *getEnvironmentEnvironment) __premarshalJSON() (*__premarshalgetEnvironm
 	return &retval, nil
 }
 
+// getEnvironmentPatchEnvironmentPatch includes the requested fields of the GraphQL type EnvironmentPatch.
+type getEnvironmentPatchEnvironmentPatch struct {
+	Status           EnvironmentPatchStatus `json:"status"`
+	LastAppliedError string                 `json:"lastAppliedError"`
+}
+
+// GetStatus returns getEnvironmentPatchEnvironmentPatch.Status, and is useful for accessing the field via an interface.
+func (v *getEnvironmentPatchEnvironmentPatch) GetStatus() EnvironmentPatchStatus { return v.Status }
+
+// GetLastAppliedError returns getEnvironmentPatchEnvironmentPatch.LastAppliedError, and is useful for accessing the field via an interface.
+func (v *getEnvironmentPatchEnvironmentPatch) GetLastAppliedError() string { return v.LastAppliedError }
+
+// getEnvironmentPatchLifecycleEnvironment includes the requested fields of the GraphQL type Environment.
+type getEnvironmentPatchLifecycleEnvironment struct {
+	UnmergedChangesCount int `json:"unmergedChangesCount"`
+}
+
+// GetUnmergedChangesCount returns getEnvironmentPatchLifecycleEnvironment.UnmergedChangesCount, and is useful for accessing the field via an interface.
+func (v *getEnvironmentPatchLifecycleEnvironment) GetUnmergedChangesCount() int {
+	return v.UnmergedChangesCount
+}
+
+// getEnvironmentPatchLifecycleResponse is returned by getEnvironmentPatchLifecycle on success.
+type getEnvironmentPatchLifecycleResponse struct {
+	// Find a single environment
+	Environment getEnvironmentPatchLifecycleEnvironment `json:"environment"`
+}
+
+// GetEnvironment returns getEnvironmentPatchLifecycleResponse.Environment, and is useful for accessing the field via an interface.
+func (v *getEnvironmentPatchLifecycleResponse) GetEnvironment() getEnvironmentPatchLifecycleEnvironment {
+	return v.Environment
+}
+
+// getEnvironmentPatchResponse is returned by getEnvironmentPatch on success.
+type getEnvironmentPatchResponse struct {
+	// Get a single environment patch by ID
+	EnvironmentPatch getEnvironmentPatchEnvironmentPatch `json:"environmentPatch"`
+}
+
+// GetEnvironmentPatch returns getEnvironmentPatchResponse.EnvironmentPatch, and is useful for accessing the field via an interface.
+func (v *getEnvironmentPatchResponse) GetEnvironmentPatch() getEnvironmentPatchEnvironmentPatch {
+	return v.EnvironmentPatch
+}
+
 // getEnvironmentResponse is returned by getEnvironment on success.
 type getEnvironmentResponse struct {
 	// Find a single environment
@@ -2151,6 +2545,164 @@ type getEnvironmentResponse struct {
 
 // GetEnvironment returns getEnvironmentResponse.Environment, and is useful for accessing the field via an interface.
 func (v *getEnvironmentResponse) GetEnvironment() getEnvironmentEnvironment { return v.Environment }
+
+// getEnvironmentServiceInstancesEnvironment includes the requested fields of the GraphQL type Environment.
+type getEnvironmentServiceInstancesEnvironment struct {
+	ServiceInstances getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection `json:"serviceInstances"`
+}
+
+// GetServiceInstances returns getEnvironmentServiceInstancesEnvironment.ServiceInstances, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironment) GetServiceInstances() getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection {
+	return v.ServiceInstances
+}
+
+// getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection includes the requested fields of the GraphQL type EnvironmentServiceInstancesConnection.
+type getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection struct {
+	Edges    []getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdge `json:"edges"`
+	PageInfo getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo                                         `json:"pageInfo"`
+}
+
+// GetEdges returns getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection.Edges, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection) GetEdges() []getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdge {
+	return v.Edges
+}
+
+// GetPageInfo returns getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection) GetPageInfo() getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo {
+	return v.PageInfo
+}
+
+// getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdge includes the requested fields of the GraphQL type EnvironmentServiceInstancesConnectionEdge.
+type getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdge struct {
+	Node getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdgeNodeServiceInstance `json:"node"`
+}
+
+// GetNode returns getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdge.Node, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdge) GetNode() getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdgeNodeServiceInstance {
+	return v.Node
+}
+
+// getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdgeNodeServiceInstance includes the requested fields of the GraphQL type ServiceInstance.
+type getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdgeNodeServiceInstance struct {
+	ServiceId string `json:"serviceId"`
+}
+
+// GetServiceId returns getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdgeNodeServiceInstance.ServiceId, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionEdgesEnvironmentServiceInstancesConnectionEdgeNodeServiceInstance) GetServiceId() string {
+	return v.ServiceId
+}
+
+// getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+type getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo struct {
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
+}
+
+// GetEndCursor returns getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
+}
+
+// GetHasNextPage returns getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// getEnvironmentServiceInstancesResponse is returned by getEnvironmentServiceInstances on success.
+type getEnvironmentServiceInstancesResponse struct {
+	// Find a single environment
+	Environment getEnvironmentServiceInstancesEnvironment `json:"environment"`
+}
+
+// GetEnvironment returns getEnvironmentServiceInstancesResponse.Environment, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesResponse) GetEnvironment() getEnvironmentServiceInstancesEnvironment {
+	return v.Environment
+}
+
+// getEnvironmentVariablesEnvironment includes the requested fields of the GraphQL type Environment.
+type getEnvironmentVariablesEnvironment struct {
+	Variables getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection `json:"variables"`
+}
+
+// GetVariables returns getEnvironmentVariablesEnvironment.Variables, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironment) GetVariables() getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection {
+	return v.Variables
+}
+
+// getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection includes the requested fields of the GraphQL type EnvironmentVariablesConnection.
+type getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection struct {
+	Edges    []getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdge `json:"edges"`
+	PageInfo getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo                                  `json:"pageInfo"`
+}
+
+// GetEdges returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection.Edges, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection) GetEdges() []getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdge {
+	return v.Edges
+}
+
+// GetPageInfo returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnection) GetPageInfo() getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo {
+	return v.PageInfo
+}
+
+// getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdge includes the requested fields of the GraphQL type EnvironmentVariablesConnectionEdge.
+type getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdge struct {
+	Node getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable `json:"node"`
+}
+
+// GetNode returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdge.Node, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdge) GetNode() getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable {
+	return v.Node
+}
+
+// getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable includes the requested fields of the GraphQL type Variable.
+type getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable struct {
+	Name      string `json:"name"`
+	ServiceId string `json:"serviceId"`
+	IsSealed  bool   `json:"isSealed"`
+}
+
+// GetName returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable.Name, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable) GetName() string {
+	return v.Name
+}
+
+// GetServiceId returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable.ServiceId, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable) GetServiceId() string {
+	return v.ServiceId
+}
+
+// GetIsSealed returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable.IsSealed, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionEdgesEnvironmentVariablesConnectionEdgeNodeVariable) GetIsSealed() bool {
+	return v.IsSealed
+}
+
+// getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+type getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo struct {
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
+}
+
+// GetEndCursor returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
+}
+
+// GetHasNextPage returns getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesEnvironmentVariablesEnvironmentVariablesConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// getEnvironmentVariablesResponse is returned by getEnvironmentVariables on success.
+type getEnvironmentVariablesResponse struct {
+	// Find a single environment
+	Environment getEnvironmentVariablesEnvironment `json:"environment"`
+}
+
+// GetEnvironment returns getEnvironmentVariablesResponse.Environment, and is useful for accessing the field via an interface.
+func (v *getEnvironmentVariablesResponse) GetEnvironment() getEnvironmentVariablesEnvironment {
+	return v.Environment
+}
 
 // getEnvironmentsEnvironmentsQueryEnvironmentsConnection includes the requested fields of the GraphQL type QueryEnvironmentsConnection.
 type getEnvironmentsEnvironmentsQueryEnvironmentsConnection struct {
@@ -2253,6 +2805,226 @@ func (v *getEnvironmentsResponse) GetEnvironments() getEnvironmentsEnvironmentsQ
 	return v.Environments
 }
 
+// getManagedBucketsProject includes the requested fields of the GraphQL type Project.
+type getManagedBucketsProject struct {
+	Buckets getManagedBucketsProjectBucketsProjectBucketsConnection `json:"buckets"`
+}
+
+// GetBuckets returns getManagedBucketsProject.Buckets, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProject) GetBuckets() getManagedBucketsProjectBucketsProjectBucketsConnection {
+	return v.Buckets
+}
+
+// getManagedBucketsProjectBucketsProjectBucketsConnection includes the requested fields of the GraphQL type ProjectBucketsConnection.
+type getManagedBucketsProjectBucketsProjectBucketsConnection struct {
+	Edges    []getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdge `json:"edges"`
+	PageInfo getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo                            `json:"pageInfo"`
+}
+
+// GetEdges returns getManagedBucketsProjectBucketsProjectBucketsConnection.Edges, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnection) GetEdges() []getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdge {
+	return v.Edges
+}
+
+// GetPageInfo returns getManagedBucketsProjectBucketsProjectBucketsConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnection) GetPageInfo() getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo {
+	return v.PageInfo
+}
+
+// getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdge includes the requested fields of the GraphQL type ProjectBucketsConnectionEdge.
+type getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdge struct {
+	Node getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket `json:"node"`
+}
+
+// GetNode returns getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdge.Node, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdge) GetNode() getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket {
+	return v.Node
+}
+
+// getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket includes the requested fields of the GraphQL type Bucket.
+type getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket struct {
+	ManagedBucket `json:"-"`
+}
+
+// GetId returns getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket.Id, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket) GetId() string {
+	return v.ManagedBucket.Id
+}
+
+// GetName returns getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket.Name, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket) GetName() string {
+	return v.ManagedBucket.Name
+}
+
+// GetProjectId returns getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket.ProjectId, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket) GetProjectId() string {
+	return v.ManagedBucket.ProjectId
+}
+
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.ManagedBucket)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalgetManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
+
+	ProjectId string `json:"projectId"`
+}
+
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket) __premarshalJSON() (*__premarshalgetManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket, error) {
+	var retval __premarshalgetManagedBucketsProjectBucketsProjectBucketsConnectionEdgesProjectBucketsConnectionEdgeNodeBucket
+
+	retval.Id = v.ManagedBucket.Id
+	retval.Name = v.ManagedBucket.Name
+	retval.ProjectId = v.ManagedBucket.ProjectId
+	return &retval, nil
+}
+
+// getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+type getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo struct {
+	EndCursor   *string `json:"endCursor"`
+	HasNextPage bool    `json:"hasNextPage"`
+}
+
+// GetEndCursor returns getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo) GetEndCursor() *string {
+	return v.EndCursor
+}
+
+// GetHasNextPage returns getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsProjectBucketsProjectBucketsConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// getManagedBucketsResponse is returned by getManagedBuckets on success.
+type getManagedBucketsResponse struct {
+	// Get a project by ID
+	Project getManagedBucketsProject `json:"project"`
+}
+
+// GetProject returns getManagedBucketsResponse.Project, and is useful for accessing the field via an interface.
+func (v *getManagedBucketsResponse) GetProject() getManagedBucketsProject { return v.Project }
+
+// getManagedServiceInstanceEnvironment includes the requested fields of the GraphQL type Environment.
+type getManagedServiceInstanceEnvironment struct {
+	Config railway.EnvironmentConfig `json:"config"`
+}
+
+// GetConfig returns getManagedServiceInstanceEnvironment.Config, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceEnvironment) GetConfig() railway.EnvironmentConfig { return v.Config }
+
+// getManagedServiceInstanceResponse is returned by getManagedServiceInstance on success.
+type getManagedServiceInstanceResponse struct {
+	// Get a service instance belonging to a service and environment
+	ServiceInstance getManagedServiceInstanceServiceInstance `json:"serviceInstance"`
+	// Find a single environment
+	Environment getManagedServiceInstanceEnvironment `json:"environment"`
+	// Get the service instance resource limit overrides (null if no overrides set)
+	ServiceInstanceLimitOverride railway.ServiceLimitOverrideConfig `json:"serviceInstanceLimitOverride"`
+}
+
+// GetServiceInstance returns getManagedServiceInstanceResponse.ServiceInstance, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceResponse) GetServiceInstance() getManagedServiceInstanceServiceInstance {
+	return v.ServiceInstance
+}
+
+// GetEnvironment returns getManagedServiceInstanceResponse.Environment, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceResponse) GetEnvironment() getManagedServiceInstanceEnvironment {
+	return v.Environment
+}
+
+// GetServiceInstanceLimitOverride returns getManagedServiceInstanceResponse.ServiceInstanceLimitOverride, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceResponse) GetServiceInstanceLimitOverride() railway.ServiceLimitOverrideConfig {
+	return v.ServiceInstanceLimitOverride
+}
+
+// getManagedServiceInstanceServiceInstance includes the requested fields of the GraphQL type ServiceInstance.
+type getManagedServiceInstanceServiceInstance struct {
+	Source             *getManagedServiceInstanceServiceInstanceSourceServiceSource `json:"source"`
+	CronSchedule       *string                                                      `json:"cronSchedule"`
+	RootDirectory      *string                                                      `json:"rootDirectory"`
+	RailwayConfigFile  *string                                                      `json:"railwayConfigFile"`
+	StartCommand       *string                                                      `json:"startCommand"`
+	HealthcheckPath    *string                                                      `json:"healthcheckPath"`
+	HealthcheckTimeout *int                                                         `json:"healthcheckTimeout"`
+}
+
+// GetSource returns getManagedServiceInstanceServiceInstance.Source, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetSource() *getManagedServiceInstanceServiceInstanceSourceServiceSource {
+	return v.Source
+}
+
+// GetCronSchedule returns getManagedServiceInstanceServiceInstance.CronSchedule, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetCronSchedule() *string { return v.CronSchedule }
+
+// GetRootDirectory returns getManagedServiceInstanceServiceInstance.RootDirectory, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetRootDirectory() *string { return v.RootDirectory }
+
+// GetRailwayConfigFile returns getManagedServiceInstanceServiceInstance.RailwayConfigFile, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetRailwayConfigFile() *string {
+	return v.RailwayConfigFile
+}
+
+// GetStartCommand returns getManagedServiceInstanceServiceInstance.StartCommand, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetStartCommand() *string { return v.StartCommand }
+
+// GetHealthcheckPath returns getManagedServiceInstanceServiceInstance.HealthcheckPath, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetHealthcheckPath() *string {
+	return v.HealthcheckPath
+}
+
+// GetHealthcheckTimeout returns getManagedServiceInstanceServiceInstance.HealthcheckTimeout, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstance) GetHealthcheckTimeout() *int {
+	return v.HealthcheckTimeout
+}
+
+// getManagedServiceInstanceServiceInstanceSourceServiceSource includes the requested fields of the GraphQL type ServiceSource.
+type getManagedServiceInstanceServiceInstanceSourceServiceSource struct {
+	Image *string `json:"image"`
+	Repo  *string `json:"repo"`
+}
+
+// GetImage returns getManagedServiceInstanceServiceInstanceSourceServiceSource.Image, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstanceSourceServiceSource) GetImage() *string {
+	return v.Image
+}
+
+// GetRepo returns getManagedServiceInstanceServiceInstanceSourceServiceSource.Repo, and is useful for accessing the field via an interface.
+func (v *getManagedServiceInstanceServiceInstanceSourceServiceSource) GetRepo() *string {
+	return v.Repo
+}
+
 // getProjectProject includes the requested fields of the GraphQL type Project.
 type getProjectProject struct {
 	Project `json:"-"`
@@ -2351,6 +3123,79 @@ type getProjectResponse struct {
 
 // GetProject returns getProjectResponse.Project, and is useful for accessing the field via an interface.
 func (v *getProjectResponse) GetProject() getProjectProject { return v.Project }
+
+// getServiceInstanceProjectEnvironmentsProject includes the requested fields of the GraphQL type Project.
+type getServiceInstanceProjectEnvironmentsProject struct {
+	Environments getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection `json:"environments"`
+}
+
+// GetEnvironments returns getServiceInstanceProjectEnvironmentsProject.Environments, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProject) GetEnvironments() getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection {
+	return v.Environments
+}
+
+// getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection includes the requested fields of the GraphQL type ProjectEnvironmentsConnection.
+type getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection struct {
+	Edges    []getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdge `json:"edges"`
+	PageInfo getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo                                 `json:"pageInfo"`
+}
+
+// GetEdges returns getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection.Edges, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection) GetEdges() []getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdge {
+	return v.Edges
+}
+
+// GetPageInfo returns getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnection) GetPageInfo() getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo {
+	return v.PageInfo
+}
+
+// getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdge includes the requested fields of the GraphQL type ProjectEnvironmentsConnectionEdge.
+type getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdge struct {
+	Node getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdgeNodeEnvironment `json:"node"`
+}
+
+// GetNode returns getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdge.Node, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdge) GetNode() getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdgeNodeEnvironment {
+	return v.Node
+}
+
+// getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdgeNodeEnvironment includes the requested fields of the GraphQL type Environment.
+type getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdgeNodeEnvironment struct {
+	Id string `json:"id"`
+}
+
+// GetId returns getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdgeNodeEnvironment.Id, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionEdgesProjectEnvironmentsConnectionEdgeNodeEnvironment) GetId() string {
+	return v.Id
+}
+
+// getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+type getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo struct {
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
+}
+
+// GetEndCursor returns getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo) GetEndCursor() string {
+	return v.EndCursor
+}
+
+// GetHasNextPage returns getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsProjectEnvironmentsProjectEnvironmentsConnectionPageInfo) GetHasNextPage() bool {
+	return v.HasNextPage
+}
+
+// getServiceInstanceProjectEnvironmentsResponse is returned by getServiceInstanceProjectEnvironments on success.
+type getServiceInstanceProjectEnvironmentsResponse struct {
+	// Get a project by ID
+	Project getServiceInstanceProjectEnvironmentsProject `json:"project"`
+}
+
+// GetProject returns getServiceInstanceProjectEnvironmentsResponse.Project, and is useful for accessing the field via an interface.
+func (v *getServiceInstanceProjectEnvironmentsResponse) GetProject() getServiceInstanceProjectEnvironmentsProject {
+	return v.Project
+}
 
 // getServiceInstanceResponse is returned by getServiceInstance on success.
 type getServiceInstanceResponse struct {
@@ -3049,6 +3894,83 @@ type updateCustomDomainResponse struct {
 // GetCustomDomainUpdate returns updateCustomDomainResponse.CustomDomainUpdate, and is useful for accessing the field via an interface.
 func (v *updateCustomDomainResponse) GetCustomDomainUpdate() bool { return v.CustomDomainUpdate }
 
+// updateManagedBucketBucketUpdateBucket includes the requested fields of the GraphQL type Bucket.
+type updateManagedBucketBucketUpdateBucket struct {
+	ManagedBucket `json:"-"`
+}
+
+// GetId returns updateManagedBucketBucketUpdateBucket.Id, and is useful for accessing the field via an interface.
+func (v *updateManagedBucketBucketUpdateBucket) GetId() string { return v.ManagedBucket.Id }
+
+// GetName returns updateManagedBucketBucketUpdateBucket.Name, and is useful for accessing the field via an interface.
+func (v *updateManagedBucketBucketUpdateBucket) GetName() string { return v.ManagedBucket.Name }
+
+// GetProjectId returns updateManagedBucketBucketUpdateBucket.ProjectId, and is useful for accessing the field via an interface.
+func (v *updateManagedBucketBucketUpdateBucket) GetProjectId() string {
+	return v.ManagedBucket.ProjectId
+}
+
+func (v *updateManagedBucketBucketUpdateBucket) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*updateManagedBucketBucketUpdateBucket
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.updateManagedBucketBucketUpdateBucket = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.ManagedBucket)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalupdateManagedBucketBucketUpdateBucket struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
+
+	ProjectId string `json:"projectId"`
+}
+
+func (v *updateManagedBucketBucketUpdateBucket) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *updateManagedBucketBucketUpdateBucket) __premarshalJSON() (*__premarshalupdateManagedBucketBucketUpdateBucket, error) {
+	var retval __premarshalupdateManagedBucketBucketUpdateBucket
+
+	retval.Id = v.ManagedBucket.Id
+	retval.Name = v.ManagedBucket.Name
+	retval.ProjectId = v.ManagedBucket.ProjectId
+	return &retval, nil
+}
+
+// updateManagedBucketResponse is returned by updateManagedBucket on success.
+type updateManagedBucketResponse struct {
+	// Updates a bucket.
+	BucketUpdate updateManagedBucketBucketUpdateBucket `json:"bucketUpdate"`
+}
+
+// GetBucketUpdate returns updateManagedBucketResponse.BucketUpdate, and is useful for accessing the field via an interface.
+func (v *updateManagedBucketResponse) GetBucketUpdate() updateManagedBucketBucketUpdateBucket {
+	return v.BucketUpdate
+}
+
 // updateProjectProjectUpdateProject includes the requested fields of the GraphQL type Project.
 type updateProjectProjectUpdateProject struct {
 	Project `json:"-"`
@@ -3353,6 +4275,40 @@ type upsertVariableResponse struct {
 // GetVariableUpsert returns upsertVariableResponse.VariableUpsert, and is useful for accessing the field via an interface.
 func (v *upsertVariableResponse) GetVariableUpsert() bool { return v.VariableUpsert }
 
+func commitEnvironmentPatch(
+	ctx context.Context,
+	client graphql.Client,
+	environmentId string,
+	patch railway.EnvironmentConfig,
+	commitMessage string,
+) (*commitEnvironmentPatchResponse, error) {
+	req := &graphql.Request{
+		OpName: "commitEnvironmentPatch",
+		Query: `
+mutation commitEnvironmentPatch ($environmentId: String!, $patch: EnvironmentConfig!, $commitMessage: String) {
+	environmentPatchCommit(environmentId: $environmentId, patch: $patch, commitMessage: $commitMessage)
+}
+`,
+		Variables: &__commitEnvironmentPatchInput{
+			EnvironmentId: environmentId,
+			Patch:         patch,
+			CommitMessage: commitMessage,
+		},
+	}
+	var err error
+
+	var data commitEnvironmentPatchResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
 func connectService(
 	ctx context.Context,
 	client graphql.Client,
@@ -3466,6 +4422,43 @@ fragment Environment on Environment {
 	var err error
 
 	var data createEnvironmentResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func createManagedBucket(
+	ctx context.Context,
+	client graphql.Client,
+	input BucketCreateInput,
+) (*createManagedBucketResponse, error) {
+	req := &graphql.Request{
+		OpName: "createManagedBucket",
+		Query: `
+mutation createManagedBucket ($input: BucketCreateInput!) {
+	bucketCreate(input: $input) {
+		... ManagedBucket
+	}
+}
+fragment ManagedBucket on Bucket {
+	id
+	name
+	projectId
+}
+`,
+		Variables: &__createManagedBucketInput{
+			Input: input,
+		},
+	}
+	var err error
+
+	var data createManagedBucketResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -3963,6 +4956,47 @@ mutation disconnectService ($id: String!) {
 	return &data, err
 }
 
+func getBucketS3Credentials(
+	ctx context.Context,
+	client graphql.Client,
+	projectId string,
+	environmentId string,
+	bucketId string,
+) (*getBucketS3CredentialsResponse, error) {
+	req := &graphql.Request{
+		OpName: "getBucketS3Credentials",
+		Query: `
+query getBucketS3Credentials ($projectId: String!, $environmentId: String!, $bucketId: String!) {
+	bucketS3Credentials(projectId: $projectId, environmentId: $environmentId, bucketId: $bucketId) {
+		accessKeyId
+		secretAccessKey
+		endpoint
+		bucketName
+		region
+		urlStyle
+	}
+}
+`,
+		Variables: &__getBucketS3CredentialsInput{
+			ProjectId:     projectId,
+			EnvironmentId: environmentId,
+			BucketId:      bucketId,
+		},
+	}
+	var err error
+
+	var data getBucketS3CredentialsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
 func getEnvironment(
 	ctx context.Context,
 	client graphql.Client,
@@ -3989,6 +5023,195 @@ fragment Environment on Environment {
 	var err error
 
 	var data getEnvironmentResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getEnvironmentConfig(
+	ctx context.Context,
+	client graphql.Client,
+	environmentId string,
+) (*getEnvironmentConfigResponse, error) {
+	req := &graphql.Request{
+		OpName: "getEnvironmentConfig",
+		Query: `
+query getEnvironmentConfig ($environmentId: String!) {
+	environment(id: $environmentId) {
+		config(decryptVariables: false)
+	}
+}
+`,
+		Variables: &__getEnvironmentConfigInput{
+			EnvironmentId: environmentId,
+		},
+	}
+	var err error
+
+	var data getEnvironmentConfigResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getEnvironmentPatch(
+	ctx context.Context,
+	client graphql.Client,
+	id string,
+) (*getEnvironmentPatchResponse, error) {
+	req := &graphql.Request{
+		OpName: "getEnvironmentPatch",
+		Query: `
+query getEnvironmentPatch ($id: String!) {
+	environmentPatch(id: $id) {
+		status
+		lastAppliedError
+	}
+}
+`,
+		Variables: &__getEnvironmentPatchInput{
+			Id: id,
+		},
+	}
+	var err error
+
+	var data getEnvironmentPatchResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getEnvironmentPatchLifecycle(
+	ctx context.Context,
+	client graphql.Client,
+	environmentId string,
+) (*getEnvironmentPatchLifecycleResponse, error) {
+	req := &graphql.Request{
+		OpName: "getEnvironmentPatchLifecycle",
+		Query: `
+query getEnvironmentPatchLifecycle ($environmentId: String!) {
+	environment(id: $environmentId) {
+		unmergedChangesCount
+	}
+}
+`,
+		Variables: &__getEnvironmentPatchLifecycleInput{
+			EnvironmentId: environmentId,
+		},
+	}
+	var err error
+
+	var data getEnvironmentPatchLifecycleResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getEnvironmentServiceInstances(
+	ctx context.Context,
+	client graphql.Client,
+	projectId string,
+	environmentId string,
+	after *string,
+) (*getEnvironmentServiceInstancesResponse, error) {
+	req := &graphql.Request{
+		OpName: "getEnvironmentServiceInstances",
+		Query: `
+query getEnvironmentServiceInstances ($projectId: String!, $environmentId: String!, $after: String) {
+	environment(id: $environmentId, projectId: $projectId) {
+		serviceInstances(first: 100, after: $after) {
+			edges {
+				node {
+					serviceId
+				}
+			}
+			pageInfo {
+				endCursor
+				hasNextPage
+			}
+		}
+	}
+}
+`,
+		Variables: &__getEnvironmentServiceInstancesInput{
+			ProjectId:     projectId,
+			EnvironmentId: environmentId,
+			After:         after,
+		},
+	}
+	var err error
+
+	var data getEnvironmentServiceInstancesResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getEnvironmentVariables(
+	ctx context.Context,
+	client graphql.Client,
+	environmentId string,
+	after *string,
+) (*getEnvironmentVariablesResponse, error) {
+	req := &graphql.Request{
+		OpName: "getEnvironmentVariables",
+		Query: `
+query getEnvironmentVariables ($environmentId: String!, $after: String) {
+	environment(id: $environmentId) {
+		variables(first: 100, after: $after) {
+			edges {
+				node {
+					name
+					serviceId
+					isSealed
+				}
+			}
+			pageInfo {
+				endCursor
+				hasNextPage
+			}
+		}
+	}
+}
+`,
+		Variables: &__getEnvironmentVariablesInput{
+			EnvironmentId: environmentId,
+			After:         after,
+		},
+	}
+	var err error
+
+	var data getEnvironmentVariablesResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -4030,6 +5253,102 @@ fragment Environment on Environment {
 	var err error
 
 	var data getEnvironmentsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getManagedBuckets(
+	ctx context.Context,
+	client graphql.Client,
+	projectId string,
+	after *string,
+) (*getManagedBucketsResponse, error) {
+	req := &graphql.Request{
+		OpName: "getManagedBuckets",
+		Query: `
+query getManagedBuckets ($projectId: String!, $after: String) {
+	project(id: $projectId) {
+		buckets(first: 100, after: $after) {
+			edges {
+				node {
+					... ManagedBucket
+				}
+			}
+			pageInfo {
+				endCursor
+				hasNextPage
+			}
+		}
+	}
+}
+fragment ManagedBucket on Bucket {
+	id
+	name
+	projectId
+}
+`,
+		Variables: &__getManagedBucketsInput{
+			ProjectId: projectId,
+			After:     after,
+		},
+	}
+	var err error
+
+	var data getManagedBucketsResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getManagedServiceInstance(
+	ctx context.Context,
+	client graphql.Client,
+	environmentId string,
+	serviceId string,
+) (*getManagedServiceInstanceResponse, error) {
+	req := &graphql.Request{
+		OpName: "getManagedServiceInstance",
+		Query: `
+query getManagedServiceInstance ($environmentId: String!, $serviceId: String!) {
+	serviceInstance(environmentId: $environmentId, serviceId: $serviceId) {
+		source {
+			image
+			repo
+		}
+		cronSchedule
+		rootDirectory
+		railwayConfigFile
+		startCommand
+		healthcheckPath
+		healthcheckTimeout
+	}
+	environment(id: $environmentId) {
+		config(decryptVariables: false)
+	}
+	serviceInstanceLimitOverride(environmentId: $environmentId, serviceId: $serviceId)
+}
+`,
+		Variables: &__getManagedServiceInstanceInput{
+			EnvironmentId: environmentId,
+			ServiceId:     serviceId,
+		},
+	}
+	var err error
+
+	var data getManagedServiceInstanceResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -4161,6 +5480,50 @@ query getServiceInstance ($environmentId: String!, $serviceId: String!) {
 	var err error
 
 	var data getServiceInstanceResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func getServiceInstanceProjectEnvironments(
+	ctx context.Context,
+	client graphql.Client,
+	projectId string,
+	after *string,
+) (*getServiceInstanceProjectEnvironmentsResponse, error) {
+	req := &graphql.Request{
+		OpName: "getServiceInstanceProjectEnvironments",
+		Query: `
+query getServiceInstanceProjectEnvironments ($projectId: String!, $after: String) {
+	project(id: $projectId) {
+		environments(first: 100, after: $after) {
+			edges {
+				node {
+					id
+				}
+			}
+			pageInfo {
+				endCursor
+				hasNextPage
+			}
+		}
+	}
+}
+`,
+		Variables: &__getServiceInstanceProjectEnvironmentsInput{
+			ProjectId: projectId,
+			After:     after,
+		},
+	}
+	var err error
+
+	var data getServiceInstanceProjectEnvironmentsResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(
@@ -4567,6 +5930,45 @@ mutation updateCustomDomain ($environmentId: String!, $id: String!, $targetPort:
 	var err error
 
 	var data updateCustomDomainResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func updateManagedBucket(
+	ctx context.Context,
+	client graphql.Client,
+	id string,
+	input BucketUpdateInput,
+) (*updateManagedBucketResponse, error) {
+	req := &graphql.Request{
+		OpName: "updateManagedBucket",
+		Query: `
+mutation updateManagedBucket ($id: String!, $input: BucketUpdateInput!) {
+	bucketUpdate(id: $id, input: $input) {
+		... ManagedBucket
+	}
+}
+fragment ManagedBucket on Bucket {
+	id
+	name
+	projectId
+}
+`,
+		Variables: &__updateManagedBucketInput{
+			Id:    id,
+			Input: input,
+		},
+	}
+	var err error
+
+	var data updateManagedBucketResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

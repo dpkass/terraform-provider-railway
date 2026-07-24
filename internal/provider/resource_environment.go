@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -29,9 +30,11 @@ type EnvironmentResource struct {
 }
 
 type EnvironmentResourceModel struct {
-	Id       types.String `tfsdk:"id"`
-	Name     types.String `tfsdk:"name"`
-	ProjecId types.String `tfsdk:"project_id"`
+	Id                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
+	ProjecId            types.String `tfsdk:"project_id"`
+	SourceEnvironmentId types.String `tfsdk:"source_environment_id"`
+	SkipInitialDeploys  types.Bool   `tfsdk:"skip_initial_deploys"`
 }
 
 func (r *EnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -69,6 +72,23 @@ func (r *EnvironmentResource) Schema(ctx context.Context, req resource.SchemaReq
 					stringvalidator.RegexMatches(uuidRegex(), "must be an id"),
 				},
 			},
+			"source_environment_id": schema.StringAttribute{
+				MarkdownDescription: "Identifier of an environment whose services, volumes, configuration, and variables are copied into this environment.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(uuidRegex(), "must be an id"),
+				},
+			},
+			"skip_initial_deploys": schema.BoolAttribute{
+				MarkdownDescription: "Whether deployments should be skipped while creating the environment. Commonly used with `source_environment_id` when cloning an environment.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
 		},
 	}
 }
@@ -103,8 +123,10 @@ func (r *EnvironmentResource) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	input := EnvironmentCreateInput{
-		Name:      data.Name.ValueString(),
-		ProjectId: data.ProjecId.ValueString(),
+		Name:                data.Name.ValueString(),
+		ProjectId:           data.ProjecId.ValueString(),
+		SourceEnvironmentId: data.SourceEnvironmentId.ValueStringPointer(),
+		SkipInitialDeploys:  data.SkipInitialDeploys.ValueBool(),
 	}
 
 	response, err := createEnvironment(ctx, *r.client, input)
