@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var errBucketCredentialsUnavailable = errors.New("Railway returned no credentials for the bucket")
+
 var _ ephemeral.EphemeralResource = &BucketCredentialsEphemeralResource{}
 var _ ephemeral.EphemeralResourceWithConfigure = &BucketCredentialsEphemeralResource{}
 
@@ -35,6 +37,15 @@ type BucketCredentialsEphemeralResourceModel struct {
 	BucketName      types.String `tfsdk:"bucket_name"`
 	Region          types.String `tfsdk:"region"`
 	UrlStyle        types.String `tfsdk:"url_style"`
+}
+
+type bucketS3Credentials struct {
+	AccessKeyId     string
+	SecretAccessKey string
+	Endpoint        string
+	BucketName      string
+	Region          string
+	UrlStyle        string
 }
 
 func (r *BucketCredentialsEphemeralResource) Metadata(ctx context.Context, req ephemeral.MetadataRequest, resp *ephemeral.MetadataResponse) {
@@ -128,17 +139,6 @@ func (r *BucketCredentialsEphemeralResource) Open(ctx context.Context, req ephem
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read bucket credentials, got error: %s", err))
 		return
 	}
-	// Railway returns a list, but its CLI treats exactly one credential set per bucket as an invariant.
-	if len(response.BucketS3Credentials) == 0 {
-		resp.Diagnostics.AddError("Client Error", "Railway returned no credentials for the bucket.")
-		return
-	}
-	if len(response.BucketS3Credentials) > 1 {
-		resp.Diagnostics.AddError("Client Error", "Railway returned multiple credential sets for the bucket.")
-		return
-	}
-
-	credentials := response.BucketS3Credentials[0]
 	data.AccessKeyId = types.StringValue(credentials.AccessKeyId)
 	data.SecretAccessKey = types.StringValue(credentials.SecretAccessKey)
 	data.Endpoint = types.StringValue(credentials.Endpoint)
@@ -177,7 +177,6 @@ func readBucketS3Credentials(
 		UrlStyle:        credentials.UrlStyle,
 	}, nil
 }
-
 func waitForBucketS3Credentials(
 	ctx context.Context,
 	client graphql.Client,

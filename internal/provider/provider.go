@@ -100,6 +100,7 @@ func (p *RailwayProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewProjectResource,
 		NewEnvironmentResource,
 		NewBucketResource,
+		NewBucketCorsConfigurationResource,
 		NewServiceResource,
 		NewVariableResource,
 		NewVariableCollectionResource,
