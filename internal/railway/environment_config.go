@@ -3,12 +3,18 @@ package railway
 type EnvironmentConfig struct {
 	Buckets  map[string]BucketConfig  `json:"buckets,omitempty"`
 	Services map[string]ServiceConfig `json:"services,omitempty"`
+	Volumes  map[string]VolumeConfig  `json:"volumes,omitempty"`
 }
 
 type BucketConfig struct {
 	Region    string `json:"region,omitempty"`
 	IsCreated bool   `json:"isCreated,omitempty"`
 	IsDeleted bool   `json:"isDeleted,omitempty"`
+}
+
+type VolumeConfig struct {
+	SizeMB    int64 `json:"sizeMB,omitempty"`
+	IsCreated bool  `json:"isCreated,omitempty"`
 }
 
 type ServiceConfig struct {
@@ -73,6 +79,27 @@ func DeleteBucketPatch(bucketID string) EnvironmentConfig {
 		Buckets: map[string]BucketConfig{
 			bucketID: {
 				IsDeleted: true,
+			},
+		},
+	}
+}
+
+func CreateVolumePatch(volumeID string, sizeMB int64) EnvironmentConfig {
+	return EnvironmentConfig{
+		Volumes: map[string]VolumeConfig{
+			volumeID: {
+				SizeMB:    sizeMB,
+				IsCreated: true,
+			},
+		},
+	}
+}
+
+func ResizeVolumePatch(volumeID string, sizeMB int64) EnvironmentConfig {
+	return EnvironmentConfig{
+		Volumes: map[string]VolumeConfig{
+			volumeID: {
+				SizeMB: sizeMB,
 			},
 		},
 	}
