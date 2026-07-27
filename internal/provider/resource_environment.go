@@ -43,7 +43,7 @@ func (r *EnvironmentResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *EnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Railway environment.",
+		MarkdownDescription: "Railway environment. Railway does not expose the create-only cloning inputs after creation, so imports cannot recover `source_environment_id` or `skip_initial_deploys`; configuring either on an imported environment requires replacement.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the environment.",
