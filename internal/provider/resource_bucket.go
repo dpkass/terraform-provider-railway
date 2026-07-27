@@ -43,7 +43,7 @@ func (r *BucketResource) Metadata(ctx context.Context, req resource.MetadataRequ
 
 func (r *BucketResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a project-level, private S3-compatible Railway storage bucket and deploys it to one environment. Changing the project, environment, or region replaces the resource.",
+		MarkdownDescription: "Manages a project-level, private S3-compatible Railway storage bucket and deploys it to one environment. Changing the project, environment, or region replaces the resource. Destroying the resource undeploys the bucket from the environment; Railway does not expose an API for deleting the project-level bucket.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Identifier of the bucket.",
