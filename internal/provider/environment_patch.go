@@ -52,11 +52,11 @@ func waitForEnvironmentPatch(ctx context.Context, client graphql.Client, patchID
 			return err
 		}
 		patch := response.EnvironmentPatch
-		if patch.LastAppliedError != "" {
-			return fmt.Errorf("Railway failed to apply environment patch: %s", patch.LastAppliedError)
-		}
 		if patch.Status == EnvironmentPatchStatusCommitted {
 			return nil
+		}
+		if patch.LastAppliedError != "" {
+			return fmt.Errorf("Railway failed to apply environment patch: %s", patch.LastAppliedError)
 		}
 
 		select {

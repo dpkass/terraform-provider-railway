@@ -3,12 +3,12 @@
 page_title: "railway_environment Resource - terraform-provider-railway"
 subcategory: ""
 description: |-
-  Railway environment. Railway does not expose the create-only cloning inputs after creation, so imports cannot recover source_environment_id or skip_initial_deploys; configuring either on an imported environment requires replacement.
+  Railway environment. Railway does not expose the create-only cloning inputs after creation, so imports cannot recover source_environment_id or a true skip_initial_deploys value; configuring either on an imported environment requires replacement.
 ---
 
 # railway_environment (Resource)
 
-Railway environment. Railway does not expose the create-only cloning inputs after creation, so imports cannot recover `source_environment_id` or `skip_initial_deploys`; configuring either on an imported environment requires replacement.
+Railway environment. Railway does not expose the create-only cloning inputs after creation, so imports cannot recover `source_environment_id` or a true `skip_initial_deploys` value; configuring either on an imported environment requires replacement.
 
 ## Example Usage
 
