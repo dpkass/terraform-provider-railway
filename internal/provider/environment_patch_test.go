@@ -36,8 +36,9 @@ func TestCommitAndWaitForEnvironmentPatch(t *testing.T) {
 				if request.Variables.(*__getEnvironmentPatchInput).Id != "patch-id" {
 					t.Fatalf("expected normalized patch ID")
 				}
-				response.Data.(*getEnvironmentPatchResponse).EnvironmentPatch.Status =
-					EnvironmentPatchStatusCommitted
+				patch := &response.Data.(*getEnvironmentPatchResponse).EnvironmentPatch
+				patch.Status = EnvironmentPatchStatusCommitted
+				patch.LastAppliedError = "superseded apply attempt"
 				return nil
 			default:
 				t.Fatalf("unexpected operation %q", request.OpName)
