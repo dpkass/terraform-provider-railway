@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -60,6 +61,7 @@ func TestAccEnvironmentResourceClone(t *testing.T) {
 					resource.TestCheckResourceAttrPair("railway_environment.test", "project_id", "railway_project.test_clone", "id"),
 					resource.TestCheckResourceAttrPair("railway_environment.test", "source_environment_id", "railway_project.test_clone", "default_environment.id"),
 					resource.TestCheckResourceAttr("railway_environment.test", "skip_initial_deploys", "true"),
+					testAccCheckClonedServiceWithoutDeployment,
 				),
 			},
 			{
@@ -88,13 +90,46 @@ resource "railway_project" "test_clone" {
   name = "%s"
 }
 
+resource "railway_service" "clone_source" {
+  name         = "clone-source"
+  project_id   = railway_project.test_clone.id
+  source_image = "traefik/whoami:v1.10"
+}
+
 resource "railway_environment" "test" {
   name                  = "%s"
   project_id            = railway_project.test_clone.id
   source_environment_id = railway_project.test_clone.default_environment.id
   skip_initial_deploys  = true
+
+  depends_on = [railway_service.clone_source]
 }
 `, projectName, name)
+}
+
+func testAccCheckClonedServiceWithoutDeployment(state *terraform.State) error {
+	environment := state.RootModule().Resources["railway_environment.test"]
+	service := state.RootModule().Resources["railway_service.clone_source"]
+
+	response, err := getServiceInstance(
+		context.Background(),
+		testAccClient(),
+		environment.Primary.ID,
+		service.Primary.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("read cloned service instance: %w", err)
+	}
+
+	instance := response.ServiceInstance
+	if instance.Source == nil || instance.Source.Image == nil ||
+		*instance.Source.Image != "traefik/whoami:v1.10" {
+		return fmt.Errorf("cloned service source image was not preserved")
+	}
+	if instance.LatestDeployment.Meta != nil {
+		return fmt.Errorf("cloned service unexpectedly received an initial deployment")
+	}
+	return nil
 }
 
 func testAccEnvironmentCloneImportStateId(state *terraform.State) (string, error) {
