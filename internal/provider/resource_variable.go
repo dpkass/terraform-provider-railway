@@ -87,7 +87,7 @@ func (r *VariableResource) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"value_wo_version": schema.Int64Attribute{
-				MarkdownDescription: "Version used to trigger updates to `value_wo`. Change this value whenever the write-only value changes.",
+				MarkdownDescription: "Version used to trigger updates to `value_wo`. Change this value whenever the write-only value changes. Imported sealed variables start at version 1, so use a greater version to rotate their value after import.",
 				Optional:            true,
 				Validators: []validator.Int64{
 					int64validator.AtLeast(1),
