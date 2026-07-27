@@ -50,7 +50,7 @@ resource "railway_service_instance" "api" {
 
 ### Read-Only
 
-- `effective_regions` (Attributes Map) Effective regions and replica counts reported by Railway, including Railway-managed defaults. (see [below for nested schema](#nestedatt--effective_regions))
+- `effective_regions` (Attributes Map) Regions and replica counts currently present in Railway's environment configuration. (see [below for nested schema](#nestedatt--effective_regions))
 - `id` (String) Identifier of the service instance settings.
 - `project_id` (String) Identifier of the project containing the service and environment.
 

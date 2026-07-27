@@ -23,7 +23,7 @@ resource "railway_variable" "example" {
 resource "railway_variable" "sealed" {
   name             = "API_KEY"
   value_wo         = var.api_key
-  value_wo_version = 1
+  value_wo_version = var.api_key_version
   environment_id   = railway_project.example.default_environment.id
   service_id       = railway_service.example.id
 }
@@ -44,7 +44,7 @@ resource "railway_variable" "sealed" {
 
 - `value` (String, Sensitive) Readable value stored in Terraform state.
 - `value_wo` (String, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only value used to create a sealed variable. The value is never stored in Terraform state and cannot be retrieved from Railway.
-- `value_wo_version` (Number) Version used to trigger updates to `value_wo`. Change this value whenever the write-only value changes.
+- `value_wo_version` (Number) Version used to trigger updates to `value_wo`. Change this value whenever the write-only value changes. Imported sealed variables start at version 1, so use a greater version to rotate their value after import.
 
 ### Read-Only
 

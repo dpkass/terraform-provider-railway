@@ -187,7 +187,7 @@ func (r *ServiceInstanceResource) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 			"effective_regions": schema.MapNestedAttribute{
-				MarkdownDescription: "Effective regions and replica counts reported by Railway, including Railway-managed defaults.",
+				MarkdownDescription: "Regions and replica counts currently present in Railway's environment configuration.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -415,6 +415,17 @@ func (r *ServiceInstanceResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	data.Id = types.StringValue(serviceInstanceResourceId(data))
+	data.EffectiveRegions = data.Regions
+	if data.EffectiveRegions.IsNull() || data.EffectiveRegions.IsUnknown() {
+		data.EffectiveRegions = types.MapValueMust(
+			types.ObjectType{AttrTypes: serviceInstanceRegionAttrTypes},
+			map[string]attr.Value{},
+		)
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	if err := r.read(ctx, &data); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read created service instance settings, got error: %s", err))
 		return
@@ -674,6 +685,11 @@ func (r *ServiceInstanceResource) serviceInstanceExists(
 		if !environments.PageInfo.HasNextPage {
 			return false, nil
 		}
+		if environments.PageInfo.EndCursor == "" {
+			return false, fmt.Errorf(
+				"Railway environment connection has a next page but no end cursor",
+			)
+		}
 		after = &environments.PageInfo.EndCursor
 	}
 
@@ -698,6 +714,11 @@ func (r *ServiceInstanceResource) serviceInstanceExists(
 		}
 		if !instances.PageInfo.HasNextPage {
 			return false, nil
+		}
+		if instances.PageInfo.EndCursor == "" {
+			return false, fmt.Errorf(
+				"Railway service instance connection has a next page but no end cursor",
+			)
 		}
 		after = &instances.PageInfo.EndCursor
 	}

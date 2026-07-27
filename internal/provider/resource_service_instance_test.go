@@ -114,7 +114,7 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "memory_gb", "0"),
 					resource.TestCheckNoResourceAttr("railway_service_instance.test", "regions"),
-					resource.TestCheckResourceAttrSet("railway_service_instance.test", "effective_regions.%"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "effective_regions.%", "0"),
 					testAccCheckSiblingServiceInstance,
 				),
 			},
@@ -131,7 +131,7 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 				Config: testAccServiceInstanceResourceResetConfig(projectName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr("railway_service_instance.test", "regions"),
-					resource.TestCheckResourceAttrSet("railway_service_instance.test", "effective_regions.%"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "effective_regions.%", "0"),
 				),
 			},
 		},

@@ -536,13 +536,21 @@ func flattenBucketCorsRules(ctx context.Context, rules []s3types.CORSRule) (base
 	models := make([]BucketCorsRuleModel, 0, len(rules))
 	var diagnostics diag.Diagnostics
 	for _, rule := range rules {
-		allowedHeaders, stringSetDiagnostics := basetypes.NewSetValueFrom(ctx, basetypes.StringType{}, rule.AllowedHeaders)
+		allowedHeaderValues := rule.AllowedHeaders
+		if allowedHeaderValues == nil {
+			allowedHeaderValues = []string{}
+		}
+		allowedHeaders, stringSetDiagnostics := basetypes.NewSetValueFrom(ctx, basetypes.StringType{}, allowedHeaderValues)
 		diagnostics.Append(stringSetDiagnostics...)
 		allowedMethods, stringSetDiagnostics := basetypes.NewSetValueFrom(ctx, basetypes.StringType{}, rule.AllowedMethods)
 		diagnostics.Append(stringSetDiagnostics...)
 		allowedOrigins, stringSetDiagnostics := basetypes.NewSetValueFrom(ctx, basetypes.StringType{}, rule.AllowedOrigins)
 		diagnostics.Append(stringSetDiagnostics...)
-		exposeHeaders, stringSetDiagnostics := basetypes.NewSetValueFrom(ctx, basetypes.StringType{}, rule.ExposeHeaders)
+		exposeHeaderValues := rule.ExposeHeaders
+		if exposeHeaderValues == nil {
+			exposeHeaderValues = []string{}
+		}
+		exposeHeaders, stringSetDiagnostics := basetypes.NewSetValueFrom(ctx, basetypes.StringType{}, exposeHeaderValues)
 		diagnostics.Append(stringSetDiagnostics...)
 		if diagnostics.HasError() {
 			return basetypes.ListValue{}, diagnostics
