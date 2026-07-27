@@ -51,6 +51,9 @@ func validateCorsOrigin(value string) error {
 	if strings.Count(value, "*") > 1 {
 		return fmt.Errorf("may contain at most one wildcard")
 	}
+	if !strings.HasPrefix(value, "http://") && !strings.HasPrefix(value, "https://") {
+		return fmt.Errorf("must use a lowercase HTTP or HTTPS scheme")
+	}
 
 	parsed, err := url.Parse(value)
 	if err != nil {
@@ -65,6 +68,9 @@ func validateCorsOrigin(value string) error {
 	if parsed.User != nil {
 		return fmt.Errorf("must not include user information")
 	}
+	if strings.HasSuffix(parsed.Host, ":") {
+		return fmt.Errorf("must not include an empty port")
+	}
 	if parsed.Path != "" || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
 		return fmt.Errorf("must not include a path, query, or fragment")
 	}
@@ -76,6 +82,9 @@ func validateCorsOrigin(value string) error {
 		number, err := strconv.ParseUint(port, 10, 16)
 		if err != nil || number == 0 {
 			return fmt.Errorf("must include a valid port")
+		}
+		if len(port) > 1 && port[0] == '0' {
+			return fmt.Errorf("must use a canonical port without leading zeros")
 		}
 	}
 	return nil

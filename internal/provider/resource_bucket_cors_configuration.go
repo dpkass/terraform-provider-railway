@@ -321,10 +321,6 @@ func (r *BucketCorsConfigurationResource) Delete(
 		return
 	}
 	if !bucketState.deployed {
-		resp.Diagnostics.AddError(
-			"Bucket Is Not Deployed",
-			"The bucket must be deployed to the configured environment before its CORS configuration can be deleted.",
-		)
 		return
 	}
 	client, bucketName, err := r.s3Client(ctx, data)

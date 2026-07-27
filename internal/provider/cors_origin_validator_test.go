@@ -21,6 +21,7 @@ func TestCorsOriginValidator(t *testing.T) {
 		"HTTPS origin":           {value: "https://example.com", valid: true},
 		"wildcard host":          {value: "https://*.example.com", valid: true},
 		"IPv6 host":              {value: "https://[::1]:8443", valid: true},
+		"explicit port":          {value: "https://example.com:8443", valid: true},
 		"empty":                  {value: "", valid: false},
 		"missing scheme":         {value: "example.com", valid: false},
 		"unsupported scheme":     {value: "ftp://example.com", valid: false},
@@ -33,6 +34,9 @@ func TestCorsOriginValidator(t *testing.T) {
 		"multiple wildcards":     {value: "https://*.*.example.com", valid: false},
 		"wildcard outside host":  {value: "https://example.com?value=*", valid: false},
 		"surrounding whitespace": {value: " https://example.com", valid: false},
+		"uppercase scheme":       {value: "HTTPS://example.com", valid: false},
+		"empty port":             {value: "https://example.com:", valid: false},
+		"leading-zero port":      {value: "https://example.com:080", valid: false},
 		"invalid port":           {value: "https://example.com:65536", valid: false},
 		"zero port":              {value: "https://example.com:0", valid: false},
 	}
