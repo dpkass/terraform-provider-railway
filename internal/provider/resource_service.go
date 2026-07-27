@@ -197,7 +197,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"volume": schema.SingleNestedAttribute{
 				MarkdownDescription: "Volume connected to the service.",
-				DeprecationMessage:  "This embedded volume is deprecated and will be replaced by dedicated volume and volume-instance resources.",
+				DeprecationMessage:  "Use `railway_volume` and `railway_volume_instance` instead.",
 				Optional:            true,
 				Attributes: map[string]schema.Attribute{
 					"id": schema.StringAttribute{

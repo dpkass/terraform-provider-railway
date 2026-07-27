@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -67,11 +68,13 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 						"id",
 					),
 					resource.TestCheckNoResourceAttr("railway_service.test_instance", "source_image"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "source_image", "traefik/whoami:v1.10"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "healthcheck_path", "/health"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0.25"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "memory_gb", "0.5"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "regions.europe-west4-drams3a.num_replicas", "1"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "effective_regions.europe-west4-drams3a.num_replicas", "1"),
+					testAccCheckSiblingServiceInstance,
 				),
 			},
 			{
@@ -86,6 +89,7 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 					resource.TestCheckNoResourceAttr("railway_service.test_instance", "source_image"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "healthcheck_path", "/healthz"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0.5"),
+					testAccCheckSiblingServiceInstance,
 				),
 			},
 			{
@@ -96,6 +100,7 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 					resource.TestCheckResourceAttr("railway_service_instance.test", "config_path", "/railway.json"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "source_image", ""),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "regions.europe-west4-drams3a.num_replicas", "1"),
+					testAccCheckSiblingServiceInstance,
 				),
 			},
 			{
@@ -110,6 +115,7 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 					resource.TestCheckResourceAttr("railway_service_instance.test", "memory_gb", "0"),
 					resource.TestCheckNoResourceAttr("railway_service_instance.test", "regions"),
 					resource.TestCheckResourceAttrSet("railway_service_instance.test", "effective_regions.%"),
+					testAccCheckSiblingServiceInstance,
 				),
 			},
 			{
@@ -141,6 +147,20 @@ resource "railway_project" "test_instance" {
 resource "railway_service" "test_instance" {
   name       = "terraform-provider-service-instance-test"
   project_id = railway_project.test_instance.id
+
+  depends_on = [railway_environment.sibling]
+}
+
+resource "railway_environment" "sibling" {
+  name       = "sibling"
+  project_id = railway_project.test_instance.id
+}
+
+resource "railway_service_instance" "sibling" {
+  environment_id   = railway_environment.sibling.id
+  service_id       = railway_service.test_instance.id
+  source_image     = "nginx:alpine"
+  healthcheck_path = "/sibling"
 }
 `, projectName)
 }
@@ -200,4 +220,28 @@ resource "railway_service_instance" "test" {
 func testAccServiceInstanceImportStateId(state *terraform.State) (string, error) {
 	resourceState := state.RootModule().Resources["railway_service_instance.test"]
 	return resourceState.Primary.ID, nil
+}
+
+func testAccCheckSiblingServiceInstance(state *terraform.State) error {
+	environment := state.RootModule().Resources["railway_environment.sibling"]
+	service := state.RootModule().Resources["railway_service.test_instance"]
+
+	response, err := getManagedServiceInstance(
+		context.Background(),
+		testAccClient(),
+		environment.Primary.ID,
+		service.Primary.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("read sibling service instance: %w", err)
+	}
+
+	instance := response.ServiceInstance
+	if instance.Source == nil || instance.Source.Image == nil || *instance.Source.Image != "nginx:alpine" {
+		return fmt.Errorf("sibling service source image changed")
+	}
+	if instance.HealthcheckPath == nil || *instance.HealthcheckPath != "/sibling" {
+		return fmt.Errorf("sibling service healthcheck path changed")
+	}
+	return nil
 }
