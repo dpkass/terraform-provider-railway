@@ -457,7 +457,7 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 			return
 		}
 		err = waitForAndBuildVolumeInstance(ctx, *r.client, data.ProjectId.ValueString(), data.Id.ValueString(), data)
-	} else {
+	} else if !data.Volume.IsNull() {
 		_, err = getAndBuildVolumeInstance(ctx, *r.client, data.ProjectId.ValueString(), data.Id.ValueString(), data)
 	}
 
@@ -498,11 +498,13 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	_, err = getAndBuildVolumeInstance(ctx, *r.client, data.ProjectId.ValueString(), data.Id.ValueString(), data)
+	if !data.Volume.IsNull() {
+		_, err = getAndBuildVolumeInstance(ctx, *r.client, data.ProjectId.ValueString(), data.Id.ValueString(), data)
 
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read volume settings, got error: %s", err))
-		return
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read volume settings, got error: %s", err))
+			return
+		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -694,7 +696,7 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 			return
 		}
 		err = waitForAndBuildVolumeInstance(ctx, *r.client, data.ProjectId.ValueString(), data.Id.ValueString(), data)
-	} else {
+	} else if !data.Volume.IsNull() {
 		_, err = getAndBuildVolumeInstance(ctx, *r.client, data.ProjectId.ValueString(), data.Id.ValueString(), data)
 	}
 
