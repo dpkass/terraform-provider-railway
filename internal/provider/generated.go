@@ -15,7 +15,7 @@ type BucketCreateInput struct {
 	// [unimplemented] The environment to deploy the bucket instances into. If
 	// `null`, the bucket will not be deployed to any environment. `undefined` will
 	// deploy to all environments.
-	EnvironmentId *string `json:"environmentId,omitempty"`
+	EnvironmentId *string `json:"environmentId"`
 	// The name of the bucket
 	Name string `json:"name"`
 	// The project to create the bucket in

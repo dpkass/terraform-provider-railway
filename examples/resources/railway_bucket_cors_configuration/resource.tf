@@ -1,14 +1,18 @@
 resource "railway_bucket" "uploads" {
-  name           = "uploads"
-  project_id     = railway_project.example.id
+  name       = "uploads"
+  project_id = railway_project.example.id
+}
+
+resource "railway_bucket_instance" "uploads" {
+  bucket_id      = railway_bucket.uploads.id
   environment_id = railway_environment.example.id
   region         = "ams"
 }
 
 resource "railway_bucket_cors_configuration" "uploads" {
   project_id     = railway_project.example.id
-  environment_id = railway_environment.example.id
-  bucket_id      = railway_bucket.uploads.id
+  environment_id = railway_bucket_instance.uploads.environment_id
+  bucket_id      = railway_bucket_instance.uploads.bucket_id
 
   cors_rules = [
     {

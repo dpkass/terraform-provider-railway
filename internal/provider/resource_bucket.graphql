@@ -31,7 +31,7 @@ query getEnvironmentConfig($environmentId: String!) {
   }
 }
 
-# @genqlient(for: "BucketCreateInput.environmentId", omitempty: true, pointer: true)
+# @genqlient(for: "BucketCreateInput.environmentId", omitempty: false, pointer: true)
 mutation createManagedBucket(
   $input: BucketCreateInput!
 ) {

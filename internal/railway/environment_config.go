@@ -8,8 +8,8 @@ type EnvironmentConfig struct {
 
 type BucketConfig struct {
 	Region    string `json:"region,omitempty"`
-	IsCreated bool   `json:"isCreated,omitempty"`
-	IsDeleted bool   `json:"isDeleted,omitempty"`
+	IsCreated bool   `json:"isCreated"`
+	IsDeleted bool   `json:"isDeleted"`
 }
 
 type VolumeConfig struct {
