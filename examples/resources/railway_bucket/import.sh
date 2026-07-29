@@ -1,1 +1,1 @@
-terraform import railway_bucket.uploads project_id:environment_id:bucket_id
+terraform import railway_bucket.uploads project_id:bucket_id
