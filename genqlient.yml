@@ -7,6 +7,8 @@ bindings:
     type: github.com/terraform-community-providers/terraform-provider-railway/internal/railway.EnvironmentConfig
   EnvironmentVariables:
     type: map[string]interface{}
+  ServiceInstanceLimit:
+    type: github.com/terraform-community-providers/terraform-provider-railway/internal/railway.ServiceLimitOverrideConfig
   PluginType:
     type: string
   DateTime:
