@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
@@ -85,16 +85,8 @@ func TestAccBucketResourceDefault(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccBucketResourceConfig(projectName, "terraform-provider-bucket-renamed", "iad", "", 0, false),
-				ConfigPlanChecks: resource.ConfigPlanChecks{
-					PreApply: []plancheck.PlanCheck{
-						plancheck.ExpectResourceAction("railway_bucket_instance.test", plancheck.ResourceActionReplace),
-					},
-				},
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("railway_bucket_instance.test", "region", "iad"),
-					testAccCheckBucketDeployments(false),
-				),
+				Config:      testAccBucketResourceConfig(projectName, "terraform-provider-bucket-renamed", "iad", "", 0, false),
+				ExpectError: regexp.MustCompile("Bucket Instance Region Cannot Be Changed"),
 			},
 		},
 	})

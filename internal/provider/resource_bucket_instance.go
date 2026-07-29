@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,6 +21,7 @@ import (
 
 var _ resource.Resource = &BucketInstanceResource{}
 var _ resource.ResourceWithImportState = &BucketInstanceResource{}
+var _ resource.ResourceWithModifyPlan = &BucketInstanceResource{}
 
 func NewBucketInstanceResource() resource.Resource {
 	return &BucketInstanceResource{}
@@ -53,7 +55,7 @@ func (r *BucketInstanceResource) Schema(
 		stringvalidator.RegexMatches(uuidRegex(), "must be an id"),
 	}
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Deploys a project-level Railway bucket to one environment. Destroying this resource undeploys only this environment instance and preserves the bucket and its other instances. Changing the bucket, environment, or region replaces the instance; Railway does not transfer bucket data between regions.",
+		MarkdownDescription: "Deploys a project-level Railway bucket to one environment. Destroying this resource undeploys only this environment instance and preserves the bucket and its other instances. Changing the bucket or environment replaces the instance.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Synthetic identifier of the bucket instance.",
@@ -79,17 +81,41 @@ func (r *BucketInstanceResource) Schema(
 				Validators: idValidators,
 			},
 			"region": schema.StringAttribute{
-				MarkdownDescription: "Railway bucket region: `ams`, `iad`, `sjc`, or `sin`. Changing this value replaces the instance without transferring its data.",
+				MarkdownDescription: "Railway bucket region: `ams`, `iad`, `sjc`, or `sin`. Railway does not support changing the region after creation; create a different bucket and migrate its data instead.",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 				Validators: []validator.String{
 					stringvalidator.OneOf("ams", "iad", "sjc", "sin"),
 				},
 			},
 		},
 	}
+}
+
+func (r *BucketInstanceResource) ModifyPlan(
+	ctx context.Context,
+	req resource.ModifyPlanRequest,
+	resp *resource.ModifyPlanResponse,
+) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var state BucketInstanceResourceModel
+	var plan BucketInstanceResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() ||
+		state.Region.IsNull() || state.Region.IsUnknown() ||
+		plan.Region.IsNull() || plan.Region.IsUnknown() ||
+		state.Region.Equal(plan.Region) {
+		return
+	}
+
+	resp.Diagnostics.AddAttributeError(
+		path.Root("region"),
+		"Bucket Instance Region Cannot Be Changed",
+		"Railway does not support changing a bucket region after creation. Create a different bucket and migrate its data instead.",
+	)
 }
 
 func (r *BucketInstanceResource) Configure(
@@ -128,6 +154,16 @@ func (r *BucketInstanceResource) Create(
 		data.Region.ValueString(),
 	)); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to deploy bucket to environment, got error: %s", err))
+		return
+	}
+	if err := waitForManagedBucketInstance(
+		ctx,
+		*r.client,
+		data.EnvironmentId.ValueString(),
+		data.BucketId.ValueString(),
+		data.Region.ValueString(),
+	); err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for bucket instance, got error: %s", err))
 		return
 	}
 
@@ -183,6 +219,16 @@ func (r *BucketInstanceResource) Update(
 		data.Region.ValueString(),
 	)); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update bucket instance, got error: %s", err))
+		return
+	}
+	if err := waitForManagedBucketInstance(
+		ctx,
+		*r.client,
+		data.EnvironmentId.ValueString(),
+		data.BucketId.ValueString(),
+		data.Region.ValueString(),
+	); err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for bucket instance, got error: %s", err))
 		return
 	}
 
@@ -260,4 +306,46 @@ func getManagedBucketDeployment(
 
 	bucket, found := response.Environment.Config.Bucket(bucketID)
 	return bucket, found && !bucket.IsDeleted, nil
+}
+
+func waitForManagedBucketInstance(
+	ctx context.Context,
+	client graphql.Client,
+	environmentID string,
+	bucketID string,
+	region string,
+) error {
+	return waitForManagedBucketInstanceState(ctx, func() (bool, error) {
+		bucket, deployed, err := getManagedBucketDeployment(ctx, client, environmentID, bucketID)
+		return deployed && bucket.Region == region, err
+	})
+}
+
+func waitForManagedBucketInstanceState(
+	ctx context.Context,
+	converged func() (bool, error),
+) error {
+	const timeout = 30 * time.Second
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	for {
+		done, err := converged()
+		if err != nil {
+			return err
+		}
+		if done {
+			return nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			return fmt.Errorf("timed out waiting for Railway bucket instance")
+		case <-ticker.C:
+		}
+	}
 }

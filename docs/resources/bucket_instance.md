@@ -3,12 +3,12 @@
 page_title: "railway_bucket_instance Resource - terraform-provider-railway"
 subcategory: ""
 description: |-
-  Deploys a project-level Railway bucket to one environment. Destroying this resource undeploys only this environment instance and preserves the bucket and its other instances. Changing the bucket, environment, or region replaces the instance; Railway does not transfer bucket data between regions.
+  Deploys a project-level Railway bucket to one environment. Destroying this resource undeploys only this environment instance and preserves the bucket and its other instances. Changing the bucket or environment replaces the instance.
 ---
 
 # railway_bucket_instance (Resource)
 
-Deploys a project-level Railway bucket to one environment. Destroying this resource undeploys only this environment instance and preserves the bucket and its other instances. Changing the bucket, environment, or region replaces the instance; Railway does not transfer bucket data between regions.
+Deploys a project-level Railway bucket to one environment. Destroying this resource undeploys only this environment instance and preserves the bucket and its other instances. Changing the bucket or environment replaces the instance.
 
 ## Example Usage
 
@@ -27,7 +27,7 @@ resource "railway_bucket_instance" "uploads" {
 
 - `bucket_id` (String) Identifier of the project-level bucket.
 - `environment_id` (String) Identifier of the environment where the bucket is deployed.
-- `region` (String) Railway bucket region: `ams`, `iad`, `sjc`, or `sin`. Changing this value replaces the instance without transferring its data.
+- `region` (String) Railway bucket region: `ams`, `iad`, `sjc`, or `sin`. Railway does not support changing the region after creation; create a different bucket and migrate its data instead.
 
 ### Read-Only
 
