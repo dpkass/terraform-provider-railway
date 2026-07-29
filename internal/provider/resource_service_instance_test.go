@@ -90,6 +90,20 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 					resource.TestCheckResourceAttr("railway_service_instance.test", "healthcheck_path", "/healthz"),
 					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0.5"),
 					testAccCheckSiblingServiceInstance,
+					testAccDetachServiceInstanceRegion,
+				),
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: testAccServiceInstanceResourceResetConfig(projectName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("railway_service_instance.test", "source_image", ""),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "healthcheck_path", ""),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "memory_gb", "0"),
+					resource.TestCheckNoResourceAttr("railway_service_instance.test", "regions"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "effective_regions.%", "0"),
+					testAccCheckSiblingServiceInstance,
 				),
 			},
 			{
@@ -327,6 +341,42 @@ func testAccCheckSiblingServiceInstance(state *terraform.State) error {
 	if instance.HealthcheckPath == nil || *instance.HealthcheckPath != "/sibling" {
 		return fmt.Errorf("sibling service healthcheck path changed")
 	}
+	return nil
+}
+
+func testAccDetachServiceInstanceRegion(state *terraform.State) error {
+	instance := state.RootModule().Resources["railway_service_instance.test"]
+	environmentID := instance.Primary.Attributes["environment_id"]
+	serviceID := instance.Primary.Attributes["service_id"]
+
+	if err := commitAndWaitForEnvironmentPatch(
+		context.Background(),
+		testAccClient(),
+		environmentID,
+		railway.DeleteServiceInstancePatch(serviceID),
+		"Externally detach Terraform acceptance test service instance",
+	); err != nil {
+		return fmt.Errorf("externally detach service instance: %w", err)
+	}
+
+	response, err := getManagedServiceInstance(
+		context.Background(),
+		testAccClient(),
+		environmentID,
+		serviceID,
+	)
+	if err != nil {
+		return fmt.Errorf("read externally detached service instance: %w", err)
+	}
+	if _, exists := response.Environment.Config.Services[serviceID]; exists {
+		return fmt.Errorf("externally detached service remains in environment config")
+	}
+	if response.ServiceInstance.Source == nil ||
+		response.ServiceInstance.Source.Image == nil ||
+		*response.ServiceInstance.Source.Image != "traefik/whoami:v1.10" {
+		return fmt.Errorf("external detach did not retain the service image")
+	}
+
 	return nil
 }
 
