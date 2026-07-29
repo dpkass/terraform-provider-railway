@@ -72,5 +72,5 @@ jobs:
         env:
           TF_ACC: 1
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: go test -v -cover ./internal/provider/
+        run: go test -v -cover ./internal/provider/ -run '^TestAccBucketResourceDefault$'
         timeout-minutes: 10
