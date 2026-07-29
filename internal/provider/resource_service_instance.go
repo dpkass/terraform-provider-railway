@@ -426,6 +426,10 @@ func (r *ServiceInstanceResource) Create(ctx context.Context, req resource.Creat
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	if err := r.apply(ctx, data); err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to configure created service instance, got error: %s", err))
+		return
+	}
 	if err := r.read(ctx, &data); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read created service instance, got error: %s", err))
 		return
