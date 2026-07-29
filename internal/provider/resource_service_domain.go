@@ -186,10 +186,14 @@ func (r *ServiceDomainResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	err := getAndBuildServiceDomain(ctx, *r.client, data.ProjectId.ValueString(), data.EnvironmentId.ValueString(), data.ServiceId.ValueString(), data.Domain.ValueString(), data)
+	found, err := getAndBuildServiceDomain(ctx, *r.client, data.ProjectId.ValueString(), data.EnvironmentId.ValueString(), data.ServiceId.ValueString(), data.Domain.ValueString(), data)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service domain, got error: %s", err))
+		return
+	}
+	if !found {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -295,27 +299,30 @@ func (r *ServiceDomainResource) ImportState(ctx context.Context, req resource.Im
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("project_id"), projectId)...)
 }
 
-func findServiceDomain(ctx context.Context, client graphql.Client, projectId string, environmentId string, serviceId string, domain string) (*ServiceDomain, error) {
+func findServiceDomain(ctx context.Context, client graphql.Client, projectId string, environmentId string, serviceId string, domain string) (*ServiceDomain, bool, error) {
 	response, err := listServiceDomains(ctx, client, environmentId, serviceId, projectId)
 
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	for _, serviceDomain := range response.Domains.ServiceDomains {
 		if serviceDomain.ServiceDomain.Domain == domain {
-			return &serviceDomain.ServiceDomain, nil
+			return &serviceDomain.ServiceDomain, true, nil
 		}
 	}
 
-	return nil, fmt.Errorf("service domain doesn't exist")
+	return nil, false, nil
 }
 
-func getAndBuildServiceDomain(ctx context.Context, client graphql.Client, projectId string, environmentId string, serviceId string, domain string, data *ServiceDomainResourceModel) error {
-	serviceDomain, err := findServiceDomain(ctx, client, projectId, environmentId, serviceId, domain)
+func getAndBuildServiceDomain(ctx context.Context, client graphql.Client, projectId string, environmentId string, serviceId string, domain string, data *ServiceDomainResourceModel) (bool, error) {
+	serviceDomain, found, err := findServiceDomain(ctx, client, projectId, environmentId, serviceId, domain)
 
 	if err != nil {
-		return err
+		return false, err
+	}
+	if !found {
+		return false, nil
 	}
 
 	data.Id = types.StringValue(serviceDomain.Id)
@@ -327,5 +334,5 @@ func getAndBuildServiceDomain(ctx context.Context, client graphql.Client, projec
 	data.Subdomain = types.StringValue(serviceDomain.Domain[:len(serviceDomain.Domain)-len(serviceDomain.Suffix)-1])
 	data.ProjectId = types.StringValue(projectId)
 
-	return nil
+	return true, nil
 }

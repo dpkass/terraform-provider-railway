@@ -1,10 +1,13 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccServiceDomainResourceDefault(t *testing.T) {
@@ -70,6 +73,43 @@ func TestAccServiceDomainResourceDefault(t *testing.T) {
 	})
 }
 
+func TestAccServiceDomainResourceExternalDeletion(t *testing.T) {
+	projectName := "tf-acc-domain-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
+	subdomain := "tf-acc-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
+	config := testAccServiceDomainResourceExternalDeletionConfig(projectName, subdomain)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:             config,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestMatchResourceAttr("railway_service_domain.test", "id", uuidRegex()),
+					testAccDeleteServiceDomain,
+				),
+			},
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestMatchResourceAttr("railway_service_domain.test", "id", uuidRegex()),
+					resource.TestCheckResourceAttr("railway_service_domain.test", "subdomain", subdomain),
+				),
+			},
+		},
+	})
+}
+
+func testAccDeleteServiceDomain(state *terraform.State) error {
+	domain, ok := state.RootModule().Resources["railway_service_domain.test"]
+	if !ok {
+		return fmt.Errorf("service domain resource is missing from state")
+	}
+	_, err := deleteServiceDomain(context.Background(), testAccClient(), domain.Primary.ID)
+	return err
+}
+
 func testAccServiceDomainResourceConfigDefault(name string) string {
 	return fmt.Sprintf(`
 resource "railway_service_domain" "test" {
@@ -78,4 +118,23 @@ resource "railway_service_domain" "test" {
   service_id = "39da7e07-fa3a-42fd-b695-d229319f2993"
 }
 `, name)
+}
+
+func testAccServiceDomainResourceExternalDeletionConfig(projectName string, subdomain string) string {
+	return fmt.Sprintf(`
+resource "railway_project" "test" {
+  name = "%s"
+}
+
+resource "railway_service" "test" {
+  name       = "domain-test"
+  project_id = railway_project.test.id
+}
+
+resource "railway_service_domain" "test" {
+  subdomain     = "%s"
+  environment_id = railway_project.test.default_environment.id
+  service_id    = railway_service.test.id
+}
+`, projectName, subdomain)
 }
