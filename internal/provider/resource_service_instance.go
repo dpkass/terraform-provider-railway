@@ -73,10 +73,10 @@ func (r *ServiceInstanceResource) Metadata(ctx context.Context, req resource.Met
 
 func (r *ServiceInstanceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages environment-specific Railway service instance settings and resource limits. Omitted attributes reset to Railway defaults. Removing this resource resets its managed overrides without deleting the underlying service.",
+		MarkdownDescription: "Manages a Railway service instance in one environment, including its source, deployment settings, and resource limits. Omitted attributes reset to Railway defaults. Removing this resource deletes the environment instance without deleting the project-level service.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Identifier of the service instance settings.",
+				MarkdownDescription: "Identifier of the service instance.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -409,8 +409,8 @@ func (r *ServiceInstanceResource) Create(ctx context.Context, req resource.Creat
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to determine service instance project, got error: %s", err))
 		return
 	}
-	if err := r.apply(ctx, data); err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create service instance settings, got error: %s", err))
+	if err := r.create(ctx, data); err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create service instance, got error: %s", err))
 		return
 	}
 
@@ -427,10 +427,10 @@ func (r *ServiceInstanceResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 	if err := r.read(ctx, &data); err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read created service instance settings, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read created service instance, got error: %s", err))
 		return
 	}
-	tflog.Trace(ctx, "created service instance settings")
+	tflog.Trace(ctx, "created service instance")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -492,27 +492,19 @@ func (r *ServiceInstanceResource) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	data.CronSchedule = types.StringValue("")
-	data.SourceImage = types.StringValue("")
-	data.SourceImagePrivateRegistryUsername = types.StringNull()
-	data.SourceImagePrivateRegistryPassword = types.StringNull()
-	data.SourceRepo = types.StringValue("")
-	data.SourceRepoBranch = types.StringValue("")
-	data.RootDirectory = types.StringValue("")
-	data.ConfigPath = types.StringValue("")
-	data.Regions = types.MapValueMust(types.ObjectType{AttrTypes: serviceInstanceRegionAttrTypes}, map[string]attr.Value{})
-	data.StartCommand = types.StringValue("")
-	data.HealthcheckPath = types.StringValue("")
-	data.HealthcheckTimeout = types.Int64Value(0)
-	data.VCpus = types.Float64Value(0)
-	data.MemoryGb = types.Float64Value(0)
-	if err := r.apply(ctx, data); err != nil {
+	if err := commitAndWaitForEnvironmentPatch(
+		ctx,
+		*r.client,
+		data.EnvironmentId.ValueString(),
+		railway.DeleteServiceInstancePatch(data.ServiceId.ValueString()),
+		"Delete Terraform service instance",
+	); err != nil {
 		exists, verificationErr := r.serviceInstanceExists(ctx, data)
 		if verificationErr != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
 				fmt.Sprintf(
-					"Unable to reset service instance settings, got error: %s. Unable to verify service instance existence, got error: %s",
+					"Unable to delete service instance, got error: %s. Unable to verify service instance existence, got error: %s",
 					err,
 					verificationErr,
 				),
@@ -522,10 +514,10 @@ func (r *ServiceInstanceResource) Delete(ctx context.Context, req resource.Delet
 		if !exists {
 			return
 		}
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reset service instance settings, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete service instance, got error: %s", err))
 		return
 	}
-	tflog.Trace(ctx, "reset service instance settings")
+	tflog.Trace(ctx, "deleted service instance")
 }
 
 func (r *ServiceInstanceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -582,6 +574,37 @@ func (r *ServiceInstanceResource) apply(ctx context.Context, data ServiceInstanc
 	}
 
 	return nil
+}
+
+func (r *ServiceInstanceResource) create(ctx context.Context, data ServiceInstanceResourceModel) error {
+	regions, err := serviceInstanceRegions(ctx, data.Regions)
+	if err != nil {
+		return err
+	}
+
+	environment, err := getEnvironmentServiceInstances(
+		ctx,
+		*r.client,
+		data.ProjectId.ValueString(),
+		data.EnvironmentId.ValueString(),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	patch := expandServiceInstanceEnvironmentPatch(data, regions, environment.Environment.Config)
+	service := patch.Services[data.ServiceId.ValueString()]
+	service.IsCreated = true
+	patch.Services[data.ServiceId.ValueString()] = service
+
+	return commitAndWaitForEnvironmentPatch(
+		ctx,
+		*r.client,
+		data.EnvironmentId.ValueString(),
+		patch,
+		"Create Terraform service instance",
+	)
 }
 
 func (r *ServiceInstanceResource) read(ctx context.Context, data *ServiceInstanceResourceModel) error {

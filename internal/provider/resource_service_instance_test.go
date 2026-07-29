@@ -134,11 +134,15 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 					resource.TestCheckResourceAttr("railway_service_instance.test", "effective_regions.%", "0"),
 				),
 			},
+			{
+				Config: testAccServiceInstanceResourceWithoutSiblingConfig(projectName),
+				Check:  testAccCheckSiblingServiceInstanceAbsent,
+			},
 		},
 	})
 }
 
-func testAccServiceInstanceProjectConfig(projectName string) string {
+func testAccServiceInstanceProjectResourcesConfig(projectName string) string {
 	return fmt.Sprintf(`
 resource "railway_project" "test_instance" {
   name = "%s"
@@ -147,22 +151,27 @@ resource "railway_project" "test_instance" {
 resource "railway_service" "test_instance" {
   name       = "terraform-provider-service-instance-test"
   project_id = railway_project.test_instance.id
-
-  depends_on = [railway_environment.sibling]
 }
 
 resource "railway_environment" "sibling" {
   name       = "sibling"
   project_id = railway_project.test_instance.id
+
+  depends_on = [railway_service.test_instance]
+}
+`, projectName)
 }
 
+func testAccServiceInstanceProjectConfig(projectName string) string {
+	return fmt.Sprintf(`
+%s
 resource "railway_service_instance" "sibling" {
   environment_id   = railway_environment.sibling.id
   service_id       = railway_service.test_instance.id
   source_image     = "nginx:alpine"
   healthcheck_path = "/sibling"
 }
-`, projectName)
+`, testAccServiceInstanceProjectResourcesConfig(projectName))
 }
 
 func testAccServiceInstanceResourceConfig(projectName, healthcheckPath string, vcpus float64) string {
@@ -217,6 +226,17 @@ resource "railway_service_instance" "test" {
 `, testAccServiceInstanceProjectConfig(projectName))
 }
 
+func testAccServiceInstanceResourceWithoutSiblingConfig(projectName string) string {
+	return fmt.Sprintf(`
+%s
+
+resource "railway_service_instance" "test" {
+  environment_id = railway_project.test_instance.default_environment.id
+  service_id     = railway_service.test_instance.id
+}
+`, testAccServiceInstanceProjectResourcesConfig(projectName))
+}
+
 func testAccServiceInstanceImportStateId(state *terraform.State) (string, error) {
 	resourceState := state.RootModule().Resources["railway_service_instance.test"]
 	return resourceState.Primary.ID, nil
@@ -243,5 +263,29 @@ func testAccCheckSiblingServiceInstance(state *terraform.State) error {
 	if instance.HealthcheckPath == nil || *instance.HealthcheckPath != "/sibling" {
 		return fmt.Errorf("sibling service healthcheck path changed")
 	}
+	return nil
+}
+
+func testAccCheckSiblingServiceInstanceAbsent(state *terraform.State) error {
+	project := state.RootModule().Resources["railway_project.test_instance"]
+	environment := state.RootModule().Resources["railway_environment.sibling"]
+	service := state.RootModule().Resources["railway_service.test_instance"]
+
+	response, err := getEnvironmentServiceInstances(
+		context.Background(),
+		testAccClient(),
+		project.Primary.ID,
+		environment.Primary.ID,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("list sibling environment service instances: %w", err)
+	}
+	for _, edge := range response.Environment.ServiceInstances.Edges {
+		if edge.Node.ServiceId == service.Primary.ID {
+			return fmt.Errorf("sibling service instance %s still exists", edge.Node.ServiceId)
+		}
+	}
+
 	return nil
 }

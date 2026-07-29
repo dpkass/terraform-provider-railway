@@ -20,6 +20,8 @@ type VolumeConfig struct {
 type ServiceConfig struct {
 	ConfigFile *string                    `json:"configFile"`
 	Deploy     *ServiceDeployConfig       `json:"deploy,omitempty"`
+	IsCreated  bool                       `json:"isCreated,omitempty"`
+	IsDeleted  bool                       `json:"isDeleted,omitempty"`
 	Source     *ServiceSourceConfig       `json:"source,omitempty"`
 	Variables  map[string]*VariableConfig `json:"variables,omitempty"`
 }
@@ -120,6 +122,16 @@ func ResizeVolumePatch(volumeID string, sizeMB int64) EnvironmentConfig {
 func (c EnvironmentConfig) Bucket(bucketID string) (BucketConfig, bool) {
 	bucket, ok := c.Buckets[bucketID]
 	return bucket, ok
+}
+
+func DeleteServiceInstancePatch(serviceID string) EnvironmentConfig {
+	return EnvironmentConfig{
+		Services: map[string]ServiceConfig{
+			serviceID: {
+				IsDeleted: true,
+			},
+		},
+	}
 }
 
 func variablePatch(serviceID string, name string, variable *VariableConfig) EnvironmentConfig {

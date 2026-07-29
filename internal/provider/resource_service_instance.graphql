@@ -59,6 +59,7 @@ query getEnvironmentServiceInstances(
   $after: String
 ) {
   environment(id: $environmentId, projectId: $projectId) {
+    config(decryptVariables: false)
     serviceInstances(first: 100, after: $after) {
       edges {
         node {

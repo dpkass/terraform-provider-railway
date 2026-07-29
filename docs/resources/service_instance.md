@@ -3,12 +3,12 @@
 page_title: "railway_service_instance Resource - terraform-provider-railway"
 subcategory: ""
 description: |-
-  Manages environment-specific Railway service instance settings and resource limits. Omitted attributes reset to Railway defaults. Removing this resource resets its managed overrides without deleting the underlying service.
+  Manages a Railway service instance in one environment, including its source, deployment settings, and resource limits. Omitted attributes reset to Railway defaults. Removing this resource deletes the environment instance without deleting the project-level service.
 ---
 
 # railway_service_instance (Resource)
 
-Manages environment-specific Railway service instance settings and resource limits. Omitted attributes reset to Railway defaults. Removing this resource resets its managed overrides without deleting the underlying service.
+Manages a Railway service instance in one environment, including its source, deployment settings, and resource limits. Omitted attributes reset to Railway defaults. Removing this resource deletes the environment instance without deleting the project-level service.
 
 ## Example Usage
 
@@ -51,7 +51,7 @@ resource "railway_service_instance" "api" {
 ### Read-Only
 
 - `effective_regions` (Attributes Map) Regions and replica counts currently present in Railway's environment configuration. (see [below for nested schema](#nestedatt--effective_regions))
-- `id` (String) Identifier of the service instance settings.
+- `id` (String) Identifier of the service instance.
 - `project_id` (String) Identifier of the project containing the service and environment.
 
 <a id="nestedatt--regions"></a>

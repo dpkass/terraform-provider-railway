@@ -2781,7 +2781,13 @@ func (v *getEnvironmentResponse) GetEnvironment() getEnvironmentEnvironment { re
 
 // getEnvironmentServiceInstancesEnvironment includes the requested fields of the GraphQL type Environment.
 type getEnvironmentServiceInstancesEnvironment struct {
+	Config           railway.EnvironmentConfig                                                                      `json:"config"`
 	ServiceInstances getEnvironmentServiceInstancesEnvironmentServiceInstancesEnvironmentServiceInstancesConnection `json:"serviceInstances"`
+}
+
+// GetConfig returns getEnvironmentServiceInstancesEnvironment.Config, and is useful for accessing the field via an interface.
+func (v *getEnvironmentServiceInstancesEnvironment) GetConfig() railway.EnvironmentConfig {
+	return v.Config
 }
 
 // GetServiceInstances returns getEnvironmentServiceInstancesEnvironment.ServiceInstances, and is useful for accessing the field via an interface.
@@ -5861,6 +5867,7 @@ func getEnvironmentServiceInstances(
 		Query: `
 query getEnvironmentServiceInstances ($projectId: String!, $environmentId: String!, $after: String) {
 	environment(id: $environmentId, projectId: $projectId) {
+		config(decryptVariables: false)
 		serviceInstances(first: 100, after: $after) {
 			edges {
 				node {
