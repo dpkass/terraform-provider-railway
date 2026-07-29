@@ -142,6 +142,32 @@ func TestAccServiceInstanceResourceDefault(t *testing.T) {
 	})
 }
 
+func TestAccServiceInstanceResourceRecreateClearsRetainedSettings(t *testing.T) {
+	projectName := "tf-acc-recreate-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccServiceInstanceRetainedSettingsConfig(projectName),
+			},
+			{
+				Config: testAccServiceInstanceProjectConfig(projectName),
+			},
+			{
+				Config: testAccServiceInstanceResourceResetConfig(projectName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("railway_service_instance.test", "source_image", ""),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "healthcheck_path", ""),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "memory_gb", "0"),
+				),
+			},
+		},
+	})
+}
+
 func testAccServiceInstanceProjectResourcesConfig(projectName string) string {
 	return fmt.Sprintf(`
 resource "railway_project" "test_instance" {
@@ -193,6 +219,21 @@ resource "railway_service_instance" "test" {
   }
 }
 `, testAccServiceInstanceProjectConfig(projectName), healthcheckPath, vcpus)
+}
+
+func testAccServiceInstanceRetainedSettingsConfig(projectName string) string {
+	return fmt.Sprintf(`
+%s
+
+resource "railway_service_instance" "test" {
+  environment_id   = railway_project.test_instance.default_environment.id
+  service_id       = railway_service.test_instance.id
+  source_image     = "traefik/whoami:v1.10"
+  healthcheck_path = "/health"
+  vcpus             = 0.25
+  memory_gb         = 0.5
+}
+`, testAccServiceInstanceProjectConfig(projectName))
 }
 
 func testAccServiceInstanceResourceBuildConfig(projectName string) string {
