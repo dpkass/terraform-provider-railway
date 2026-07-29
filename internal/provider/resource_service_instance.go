@@ -577,6 +577,28 @@ func (r *ServiceInstanceResource) apply(ctx context.Context, data ServiceInstanc
 		return err
 	}
 
+	service := current.Environment.Config.Services[data.ServiceId.ValueString()]
+	if len(regions) == 0 && service.Deploy != nil && len(service.Deploy.MultiRegionConfig) > 0 {
+		current, err = getManagedServiceInstance(
+			ctx,
+			*r.client,
+			data.EnvironmentId.ValueString(),
+			data.ServiceId.ValueString(),
+		)
+		if err != nil {
+			return err
+		}
+		if err := commitAndWaitForEnvironmentPatch(
+			ctx,
+			*r.client,
+			data.EnvironmentId.ValueString(),
+			expandServiceInstanceEnvironmentPatch(data, regions, current.Environment.Config),
+			"Manage detached Terraform service instance",
+		); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

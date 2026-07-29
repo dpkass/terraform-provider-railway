@@ -168,6 +168,29 @@ func TestAccServiceInstanceResourceRecreateClearsRetainedSettings(t *testing.T) 
 	})
 }
 
+func TestAccServiceInstanceResourceDisableClearsRetainedSettings(t *testing.T) {
+	projectName := "tf-acc-disable-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccServiceInstanceRetainedSettingsConfig(projectName),
+			},
+			{
+				Config: testAccServiceInstanceResourceResetConfig(projectName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("railway_service_instance.test", "source_image", ""),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "healthcheck_path", ""),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "vcpus", "0"),
+					resource.TestCheckResourceAttr("railway_service_instance.test", "memory_gb", "0"),
+				),
+			},
+		},
+	})
+}
+
 func testAccServiceInstanceProjectResourcesConfig(projectName string) string {
 	return fmt.Sprintf(`
 resource "railway_project" "test_instance" {
